@@ -62,7 +62,7 @@ const Page = () => {
                     <input
                       type={oldPasswordVisible ? 'text' : 'password'}
                       id="oldPassword"
-                      name="oldPassword"
+                      name="oldPassword" placeholder='Enter Old Password'
                       className="w-full p-3 border border-gray-300 rounded-md"
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -92,7 +92,7 @@ const Page = () => {
                   <div className="relative">
                     <input
                       type={newPasswordVisible ? 'text' : 'password'}
-                      id="newPassword"
+                      id="newPassword" placeholder='Enter New Password'
                       name="newPassword"
                       className="w-full p-3 border border-gray-300 rounded-md"
                       onChange={formik.handleChange}
@@ -124,7 +124,7 @@ const Page = () => {
                     <input
                       type={confirmNewPasswordVisible ? 'text' : 'password'}
                       id="confirmNewPassword"
-                      name="confirmNewPassword"
+                      name="confirmNewPassword" placeholder='Confirm New Password'
                       className="w-full p-3 border border-gray-300 rounded-md"
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}

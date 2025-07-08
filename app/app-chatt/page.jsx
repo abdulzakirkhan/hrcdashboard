@@ -1,9 +1,14 @@
 "use client";
 
+import { useGetAllChatsQuery } from "@/redux/chat/chatApi";
 import React, { useState } from "react";
 import { FaPaperclip, FaMicrophone, FaTelegramPlane } from "react-icons/fa"; // Import icons
+import { useSelector } from "react-redux";
 
-const Page = () => {
+const ChatPage = () => {
+
+  const user = useSelector((state) => state.auth?.user);
+  const [page, setPage] = useState(0);
   // State to manage the message input and chat history
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([
@@ -12,6 +17,17 @@ const Page = () => {
     { sender: "Customer", content: "I haven't received my item yet.", date: "2025-01-20 11:17:03" },
     { sender: "Support", content: "Let me check your order status.", date: "2025-01-20 11:17:03" },
   ]);
+
+  
+  const {
+    data: getAllChats,
+    isLoading: getAllChatLoading,
+    refetch: getAllChatsReftech,
+    isFetching: getAllChatsFeching,
+  } = useGetAllChatsQuery({
+    id: user?.userid,
+    page,
+  });
 
   // Handle new message input
   const handleMessageChange = (e) => {
@@ -24,6 +40,9 @@ const Page = () => {
     setMessages([...messages, { sender: "Customer", content: message, date: new Date().toLocaleString() }]);
     setMessage(""); // Clear input field
   };
+
+
+  console.log("getAllChats :",getAllChats)
 
   return (
     <>
@@ -55,9 +74,9 @@ const Page = () => {
         </div>
 
         {/* Input area fixed at the bottom */}
-        <div className="fixed bottom-0 w-full md:w-[92%] bg-white p-4 border-t-2">
-          <div className="flex w-full items-center gap-3">
-            <button className="bg-primary p-3 rounded-lg text-white">
+        <div className="fixed bottom-0 w-full lg:w-[calc(100%-208px)] bg-white py-4 border-t-2">
+          <div className="flex w-full items-center gap-3 pe-8">
+            <button className="bg-primary py-2 px-3 rounded-lg text-white">
               <FaPaperclip className="text-2xl cursor-pointer" />
             </button>
             <input
@@ -67,7 +86,7 @@ const Page = () => {
               placeholder="Type a message..."
               className="w-1/2 md:w-[73%] p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <button className="bg-primary p-3 rounded-lg text-white">
+            <button className="bg-primary py-2 px-3 rounded-lg text-white">
               <FaMicrophone className="text-2xl cursor-pointer" />
             </button>
             <button className="bg-primary flex items-center gap-2 px-6 py-2 rounded-lg text-white" onClick={handleSendMessage}>
@@ -81,4 +100,4 @@ const Page = () => {
   );
 };
 
-export default Page;
+export default ChatPage;

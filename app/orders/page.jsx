@@ -1,7 +1,8 @@
 "use client"
 import React from 'react'
 import Orders from '@/components/Orders'
-
+import { ordersData } from '../data'
+import OrderCard from '@/components/OrderCard'
 const page = () => {
   return (
     <>
@@ -12,7 +13,15 @@ const page = () => {
         <div className="grid md:grid-cols-12 lg:w-full gap-12">
           <Orders />
         </div>
-      </div>
+
+
+
+        {/* <div className="flex items-center flex-wrap gap-6">
+          {ordersData.map((order,index) => (
+            <OrderCard key={index} order={order}  />
+          ))}
+        </div> */}
+      </div>  
     </section>
     </>
   )

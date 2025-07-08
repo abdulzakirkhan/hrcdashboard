@@ -52,7 +52,7 @@ const OrderDetail = ({ params }) => {
           <button onClick={() => setSummaryTab(null)} className="flex my-4 items-center gap-2 hover:text-[#312E81]"><FaArrowLeftLong /> Back</button>
             <div className="grid md:grid-cols-12 justify-items-center gap-8 items-center">
               <div className="w-full md:col-span-5">
-                <div className="border-2 p-5 rounded-xl h-60">
+                <div className="border-2 p-5 rounded-xl h-64">
                   <div className="flex items-center gap-2">
                     <FaRegCreditCard size={40} className="text-primary" />
                     <div className="">
@@ -82,7 +82,7 @@ const OrderDetail = ({ params }) => {
               </div>
 
               <div className="w-full md:col-span-5">
-                <div className="border-2 rounded-xl p-5 h-60">
+                <div className="border-2 rounded-xl p-5 h-64">
                   <div className="flex items-center gap-3">
                     <MdPayment size={43} className="text-primary" />
                     <h3 className="text-primary">Payment Method</h3>
@@ -260,7 +260,7 @@ const OrderDetail = ({ params }) => {
                                   </div>
                                 </div>
                                 <div className="text-center py-4">
-                                  <button type='button' className="text-white px-6 py-2 rounded-lg bg-primary" onClick={() => setSummaryTab(true)}>Pay Now</button>
+                                  {/* <button type='button' className="text-white px-6 py-2 rounded-lg bg-primary" onClick={() => setSummaryTab(true)}>Pay Now</button> */}
                                   <button type='button' className="text-white px-6 py-2 rounded-lg bg-primary" onClick={() => setSummaryTab("summary")}>Pay Now</button>
                                 </div>
                              </div>
@@ -385,8 +385,8 @@ const OrderDetail = ({ params }) => {
                               <div className="flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="35" height="35">
                                   <circle cx="50" cy="50" r="45" fill="#312E81" />
-                                  <text x="50" y="55" fontFamily="Arial" font-size="20" fill="white" text-anchor="middle">STRIPE</text>
-                                  <text x="50" y="55" fontFamily="Arial" fontSize="20" fill="white" text-anchor="middle">STRIPE</text>
+                                  <text x="50" y="55" fontFamily="Arial" fontSize="20" fill="white" textAnchor="middle">STRIPE</text>
+                                  <text x="50" y="55" fontFamily="Arial" fontSize="20" fill="white" textAnchor="middle">STRIPE</text>
                                 </svg>
                                 <p className="p1 text-grey">Payment Gateway</p>
                               </div>

@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion'; // Import Framer Motion
-
+import Link from 'next/link';
+import { IoMdArrowRoundBack } from "react-icons/io";
 const Page = () => {
   // State to manage the amount entered and the selected button value
   const [amount, setAmount] = useState('');
@@ -23,6 +24,7 @@ const Page = () => {
   return (
     <>
       <section className="mt-20">
+          <Link href={"/wallet"} className="flex items-center gap-2 hover:text-primary"> <IoMdArrowRoundBack /> Back</Link>
         <div className="container py-8 mx-auto px-6 flex flex-col justify-center items-center">
           {/* Heading with fade-in animation */}
           <motion.h1

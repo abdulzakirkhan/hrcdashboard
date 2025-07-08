@@ -12,7 +12,8 @@ const page = () => {
     const [amount, setAmount] = useState(0)
     // Function to open the modal
     const openModal = () => setIsModalOpen(!isModalOpen);
-  
+
+    const [isBank, setisBank] = useState(false)
     // Function to close the modal
     const closeModal = () => setIsModalOpen(false);
     const handleIsPayment = () => {
@@ -308,31 +309,13 @@ const page = () => {
                         </div>
                         <div className="w-full md:col-span-6">
                             <div className="p-6 h-full bg-[#d4d3e4] md:h-[240] flex justify-center items-center rounded-2xl shadow-xl">
-                            <div className="flex gap-3 items-start">
-                                <FaInfoCircle className="-mt-2" style={{fontSize:"45px"}} />
-                                <p className="text-xl m-0"> With Bank Transfer Pay,You Will Receive The Wallet amount after a 4% deduction as a services fee, while with Payment Gateway, you will receive the wallet amount after a 24% deduction ,which includes a 4% service s fee and s 20% VAT.</p>
-                            </div>
-                                <h1 className="text-xl font-bold mb-4">Available Credit</h1>
-                                <p className="text-base text-gray-700 py-2">Rewards Amount: <span className="font-semibold">USD 0.05</span></p>
-                                <p className="text-base text-gray-700 py-2">Wallet Amount: <span className="font-semibold">USD 0.00</span></p>
-                                <p className="text-base text-gray-700 py-2">Total Credit (Rewards + Wallet): <span className="font-semibold">USD 0.05</span></p>
-                            </div>
-                        </div>
-
-                        <div className="w-full md:col-span-6">
-                            <div className="p-6 h-full bg-[#d4d3e4] md:h-[240px] flex justify-center items-center rounded-2xl shadow-xl">
-                                <div className="flex gap-3 items-start">
-                                    <FaInfoCircle className="text-[#4a5568] mt-1" style={{ fontSize: "32px" }} />
-                                    <p className="text-lg text-gray-800 m-0">
-                                        With Bank Transfer Pay, you will receive the wallet amount after a 4% deduction as a service fee, while with Payment Gateway, you will receive the wallet amount after a 24% deduction, which includes a 4% service fee and a 20% VAT.
-                                    </p>
-                                </div>
+                              <div className="flex gap-3 items-start">
+                                  <FaInfoCircle className="-mt-2" style={{fontSize:"45px"}} />
+                                  <p className="m-0 text-md"> With Bank Transfer Pay,You Will Receive The Wallet amount after a 4% deduction as a services fee, while with Payment Gateway, you will receive the wallet amount after a 24% deduction ,which includes a 4% service s fee and s 20% VAT.</p>
+                              </div>
                             </div>
                         </div>
                     </div>
-                    {/* <div className="grid md:grid-cols-12">
-                        
-                    </div> */}
                 </div>
             )}
             

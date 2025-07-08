@@ -2,10 +2,29 @@
 import { motion } from 'framer-motion'; // Import framer-motion
 import Image from 'next/image'
 import Link from 'next/link'
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { MdDelete } from "react-icons/md";
 const page = () => {
   const [showModal, setShowModal] = useState(false)
+  const modalRef = useRef(null);
+
+
+
+    useEffect(() => {
+      const handleClickOutside = (e) => {
+        if (modalRef.current && !modalRef.current.contains(e.target)) {
+          setShowModal(false);
+        }
+      };
+  
+      if (showModal) {
+        document.addEventListener("mousedown", handleClickOutside);
+      }
+  
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [showModal]);
   return (
     <>
       <section className="mt-20">
@@ -57,7 +76,7 @@ const page = () => {
               animate={{ opacity: 1, x: 0 }} // Move to its final position
               transition={{ duration: 1, ease: 'easeOut' }} // Add smooth transition
             >
-              <Link href="" onClick={() => setShowModal(!showModal)}>
+              <div className="cursor-pointer" onClick={() => setShowModal(!showModal)}>
                 <div className="p-8">
                   <div className="flex justify-between items-center">
                     <p className='p1 text-grey'>Delete Account</p>
@@ -67,9 +86,21 @@ const page = () => {
                     </div>
                   </div>
                 </div>
-              </Link>
+              </div>
             </motion.div>
 
+            {showModal && (
+              <div className="fixed inset-0 flex justify-center items-center" onClick={() => setShowModal(false)}>
+                <div ref={modalRef} className="fixed rounded-lg flex border-2 flex-col shadow-xl items-center gap-2 w-1/3 backdrop-blur-xl p-3 md:p-6" style={{ top: "30%", left: "40%" }} onClick={(e) => e.stopPropagation()} >
+                  <p className="text-lg font-bold">Are You Sure you want to delete Your Account ?</p>
+
+                  <div className="flex items-center gap-3">
+                    <button className="bg-grey text-white px-5 py-2 rounded-md" onClick={() => setShowModal(false)}>Cancel</button>
+                    <button className="px-8 py-2 text-white rounded-md bg-primary" >Yes</button>
+                  </div>
+                </div>
+              </div>
+            )}
 
           </div>
         </div>
