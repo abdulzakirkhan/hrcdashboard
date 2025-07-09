@@ -1,4 +1,3 @@
-import { appNameCode } from '.';
 
 const APP_NAME_CODES = {
   HYBRID_RESEARCH_CENTER: 'hrc',

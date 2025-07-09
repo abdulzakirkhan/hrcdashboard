@@ -16,13 +16,15 @@ import { appNameCode } from "@/config";
 import { useGetStandardValuesQuery } from "@/redux/shared/sharedApi";
 import { ORDERS_TYPES } from "@/config/constants";
 import { getOrderTypeValues } from "@/config/myWebHelpers";
+import { useGetProfileQuery } from "@/redux/user/profileApi";
 
 const DashboardPage = () => {
    const orderType = ORDERS_TYPES.ALL_ORDERS;
   const user = useSelector((state) => state.auth?.user);
   const userId = user?.userid;
-
+  const { data: profileData } = useGetProfileQuery(user?.userid);
   const router = useRouter();
+  // const isVerified = false; // Uncomment this line to simulate unverified user
   const isVerified = user?.isVerified;
 
   const [showFilter, setShowFilter] = useState(false);
@@ -59,7 +61,7 @@ const DashboardPage = () => {
     isFetching: getAllOrdersLoading,
   } = useGetOrderByPaymentTypeQuery(getAllorderBody);
 
-  console.log("getAllOrders------------>>>", getAllOrders);
+  // console.log("*************user*************", profileData);
 
   useEffect(() => {
     const handleRouteChange = () => setShowFilter(false);

@@ -129,12 +129,12 @@ function AppLayout({ children }) {
 
   // Redirect logic
   useEffect(() => {
-    // 🚫 If not logged in and trying to access any page except sign-in/up → redirect to sign-in
+    // If not logged in and trying to access any page except sign-in/up → redirect to sign-in
     if (!user && !isPureAuthPage) {
       router.push("/sign-in");
     }
 
-    // 🔁 If logged in and trying to access sign-in or sign-up → redirect to dashboard
+    // If logged in and trying to access sign-in or sign-up → redirect to dashboard
     if (user && isPureAuthPage) {
       router.push("/dashboard");
     }
@@ -142,12 +142,14 @@ function AppLayout({ children }) {
 
   // Render no layout pages
   if (isNoLayoutPage) {
-    // ✅ Protect `/phone-number-verification`
+    // Protect `/phone-number-verification`
     if (isProtectedNoLayout && !user) {
       return null; // Optional: or show a loading indicator
     }
     return children;
   }
+
+  
 
   // Render layout
   return (

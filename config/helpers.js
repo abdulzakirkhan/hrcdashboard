@@ -1,13 +1,15 @@
-import { COUNTRY_DETAILS, DSS_DEFAULT_COUNTRY } from '@libs/inputs/constants';
-import { ChangeUser } from '@modules/Auth/store/authSlice';
-import { ORDERS_TYPES } from '@modules/Orders/constants';
-import navigationRoutes from '@navigation/routes/navigationRoutes';
-import { api } from '@services/index';
-import store from '@store/index';
+// import { COUNTRY_DETAILS, DSS_DEFAULT_COUNTRY } from '@libs/inputs/constants';
+// import { ChangeUser } from '@modules/Auth/store/authSlice';
+// import { ORDERS_TYPES } from '@modules/Orders/constants';
+// import navigationRoutes from '@navigation/routes/navigationRoutes';
+// import { api } from '@services/index';
+// import store from '@store/index';
 import parsePhoneNumber from 'libphonenumber-js';
 import { DateTime } from 'luxon';
-import { Alert } from 'react-native';
-import { OneSignal } from 'react-native-onesignal';
+// import { Alert } from 'react-native';
+// import { OneSignal } from 'react-native-onesignal';
+
+// import { APP_NAME_CODES } from '@config/constants';
 import {
   ALL_CURRENCIES_OBJ,
   APP_NAME_CODES,
@@ -16,6 +18,7 @@ import {
   UserRole,
 } from './constants';
 import { appNameCode } from './index';
+import { COUNTRY_DETAILS, DSS_DEFAULT_COUNTRY } from '@/lib/inputs/constants';
 
 const getSizeFromPercentage = (percentage, totalSize) => {
   if (percentage && totalSize) return (percentage * totalSize) / 100;
@@ -679,22 +682,22 @@ const getCountryCodeforUsCa = (phoneNumber) => {
 };
 
 const getCurrencyNameFromPhone = (phoneNumber) => {
-  if (appNameCode == APP_NAME_CODES.DIGITAL_SKY_SERVICES) {
-    if (phoneNumber) {
-      return SEC_DSS_DEFAULT_CURRENCY.currency;
-    } else return '';
-  } else {
-    if (phoneNumber) {
-      let countryCode = parsePhoneNumber(phoneNumber)?.country;
-      if (!countryCode) {
-        countryCode = getCountryCodeforUsCa(phoneNumber);
-      }
-      const currencyName = NEW_SEC_CURRENCIES?.find(
-        (currentCurrency) => currentCurrency.countryCode == countryCode
-      )?.currency;
-      return currencyName;
-    } else return '';
+  // if (appNameCode == APP_NAME_CODES.DIGITAL_SKY_SERVICES) {
+  //   if (phoneNumber) {
+  //     return SEC_DSS_DEFAULT_CURRENCY.currency;
+  //   } else return '';
+  // } else {
+  //   if (phoneNumber) {
+  //   } else return '';
+  // }
+  let countryCode = parsePhoneNumber(phoneNumber)?.country;
+  if (!countryCode) {
+    countryCode = getCountryCodeforUsCa(phoneNumber);
   }
+  const currencyName = NEW_SEC_CURRENCIES?.find(
+    (currentCurrency) => currentCurrency.countryCode == countryCode
+  )?.currency;
+  return currencyName;
 };
 
 const getCountryNameFromPhone = (phoneNumber) => {
@@ -944,15 +947,15 @@ const prepareNotificationSectionList = (notifications) => {
   return sections;
 };
 
-const getAppLogo = () => {
-  if (appNameCode == APP_NAME_CODES.HYBRID_RESEARCH_CENTER)
-    return require('@assets/images/logo.png');
-  else if (appNameCode == APP_NAME_CODES.DIGITAL_SKY_SERVICES)
-    return require('@assets/images/dssLogo.png');
-  else if (appNameCode == APP_NAME_CODES.BRAIN_BENCH)
-    return require('@assets/images/bbLogo.png');
-  else return require('@assets/images/logo.png');
-};
+// const getAppLogo = () => {
+//   if (appNameCode == APP_NAME_CODES.HYBRID_RESEARCH_CENTER)
+//     return require('@assets/images/logo.png');
+//   else if (appNameCode == APP_NAME_CODES.DIGITAL_SKY_SERVICES)
+//     return require('@assets/images/dssLogo.png');
+//   else if (appNameCode == APP_NAME_CODES.BRAIN_BENCH)
+//     return require('@assets/images/bbLogo.png');
+//   else return require('@assets/images/logo.png');
+// };
 
 const removeAdminFromURL = (url) => {
   return url.replace(/\/admin$/, '');
@@ -962,7 +965,7 @@ const logout = () => {
   store.dispatch(ChangeUser(null));
   store.dispatch(api.util.resetApiState());
   try {
-    OneSignal.User.removeTag('userId');
+    // OneSignal.User.removeTag('userId');
   } catch (error) {}
 };
 

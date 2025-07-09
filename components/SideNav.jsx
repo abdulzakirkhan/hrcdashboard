@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaBars, FaSignOutAlt } from "react-icons/fa";
 import { usePathname } from "next/navigation";
 
@@ -8,15 +8,26 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
+import { useGetProfileQuery } from "@/redux/user/profileApi";
+import { removeAdminFromURL } from "@/config/helpers";
+import { baseUrl } from "@/config";
 
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const user = useSelector((state) => state.auth?.user);
+  const { data: profileData } = useGetProfileQuery(user?.userid);
   //const isVerified = false;
   const isVerified = user?.isVerified;
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showPopUp, setShowPopUp] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  const [userData, setUserData] = useState({
+    profileImage: profileData?.path
+      ? "https://staging.portalteam.org" + profileData?.path
+      : "/header/profile.svg",
+    name: profileData?.name || "Hello, User",
+  });
 
   const alwaysVisibleItems = [
     { title: "Dashboard", path: "/dashboard", icon: "/dashboard.png" },
@@ -71,6 +82,18 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     }
   }
 
+
+useEffect(() => {
+  if (profileData) {
+    const updatedUser = {
+      profileImage: "https://staging.portalteam.org" + profileData?.path,
+      name: profileData?.name,
+    };
+    setUserData(updatedUser);
+  }
+}, [profileData]);
+  
+
   return (
     <div
       className={`bg-gray-900 sm-screen-side-nav h-screen text-white fixed left-0 z-50 flex flex-col transition-all duration-1000 md:duration-1000 ${
@@ -92,15 +115,15 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       {!isCollapsed && (
         <div className="text-center p-3 profile">
           <Image
-            src="/header/profile.svg"
+            src={userData?.profileImage}
             alt="Profile"
             width={80}
             height={80}
-            className="rounded-full mx-auto cursor-pointer"
+            className="rounded-full object-cover h-20 mx-auto cursor-pointer"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           />
           <h2 className="text-lg text-white flex justify-center font-bold mt-2">
-            Hello, User
+            {userData?.name}
           </h2>
         </div>
       )}

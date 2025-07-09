@@ -15,11 +15,6 @@ export default function SignInPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-   
-
-
-
-
 
   const dispatch = useDispatch();
   const [verifyLoginFeidls, { isLoading: verifyLoginFeidlsLoading }] =
