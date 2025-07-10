@@ -682,14 +682,14 @@ const getCountryCodeforUsCa = (phoneNumber) => {
 };
 
 const getCurrencyNameFromPhone = (phoneNumber) => {
-  // if (appNameCode == APP_NAME_CODES.DIGITAL_SKY_SERVICES) {
-  //   if (phoneNumber) {
-  //     return SEC_DSS_DEFAULT_CURRENCY.currency;
-  //   } else return '';
-  // } else {
-  //   if (phoneNumber) {
-  //   } else return '';
-  // }
+  if (appNameCode == APP_NAME_CODES.DIGITAL_SKY_SERVICES) {
+    if (phoneNumber) {
+      return SEC_DSS_DEFAULT_CURRENCY.currency;
+    } else return '';
+  } else {
+    if (phoneNumber) {
+    } else return '';
+  }
   let countryCode = parsePhoneNumber(phoneNumber)?.country;
   if (!countryCode) {
     countryCode = getCountryCodeforUsCa(phoneNumber);

@@ -102,7 +102,7 @@ export const ordersData=[
 
 
 
-export const paymentHistory=[
+export const paymentHistoryH=[
     {
         orderId:13881,
         price:23,

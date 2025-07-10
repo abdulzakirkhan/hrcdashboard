@@ -121,7 +121,8 @@ const Header = ({ profileName, profileImage }) => {
     setShowModal(false);
     setIsDropdownOpen(false);
   }, [pathname]);
-  
+
+  // console.log("suerData", userData);
   return (
     <>
       <header className="bg-[#312E81] px-2 md:px-0 fixed w-full z-50">

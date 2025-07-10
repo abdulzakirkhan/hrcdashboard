@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Cards from "@/components/Cards";
 import { motion } from "framer-motion";
-import { cardsData } from "../data";
+// import { cardsData } from "../data";
 import Link from "next/link";
 import { useSelector } from "react-redux";
 import {
@@ -19,7 +19,7 @@ import { getOrderTypeValues } from "@/config/myWebHelpers";
 import { useGetProfileQuery } from "@/redux/user/profileApi";
 
 const DashboardPage = () => {
-   const orderType = ORDERS_TYPES.ALL_ORDERS;
+  const orderType = ORDERS_TYPES.ALL_ORDERS;
   const user = useSelector((state) => state.auth?.user);
   const userId = user?.userid;
   const { data: profileData } = useGetProfileQuery(user?.userid);
@@ -61,7 +61,49 @@ const DashboardPage = () => {
     isFetching: getAllOrdersLoading,
   } = useGetOrderByPaymentTypeQuery(getAllorderBody);
 
-  // console.log("*************user*************", profileData);
+  const [allOrders, setAllOrders] = useState([]);
+  const [applyFilter, setApplyFilter] = useState([]);
+  const [orderToShown, setOrderToShown] = useState(allOrders);
+  
+  const completedOrders = allOrders.filter(
+    (order) => order.orderprogress === "Completed"
+  );
+  const inProgressOrders = allOrders.filter(
+    (order) => order.orderprogress === "Working"
+  );
+  const cardsData = [
+    {
+      id: 1,
+      title: "Total Order",
+      title: "Total Orders",
+      count: allOrders?.length || 0,
+      time: "Up from yesterday",
+      percentage: "8.5%",
+      icon: "/home/icons/orders.png",
+      bg: "/home/primarybg.svg",
+      statusIcon: "/icons/home/up.svg",
+    },
+    {
+      id: 2,
+      title: "In Progress",
+      count: inProgressOrders?.length || 0,
+      time: "Up from past week",
+      percentage: "1.3%",
+      icon: "/home/icons/progress.png",
+      bg: "/home/orange.svg",
+      statusIcon: "/icons/home/progress.svg",
+    },
+    {
+      id: 3,
+      title: "Completed",
+      count: completedOrders?.length || 0,
+      time: "Up from Yesterday",
+      percentage: "1.8%",
+      icon: "/home/icons/completed.png",
+      bg: "/home/green.svg",
+      statusIcon: "/icons/home/completed.svg",
+    },
+  ];
 
   useEffect(() => {
     const handleRouteChange = () => setShowFilter(false);
@@ -83,6 +125,18 @@ const DashboardPage = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+  useEffect(() => {
+    const filteredOrders = filterOrders(allOrders, applyFilter);
+    setOrderToShown(filteredOrders);
+  }, [applyFilter]);
+  useEffect(() => {
+    if (
+      getAllOrders?.result?.orderAll?.length > 0 &&
+      Array.isArray(getAllOrders?.result?.orderAll)
+    )
+      setAllOrders(getAllOrders?.result?.orderAll);
+  }, [getAllOrders]);
+  
   return (
     <section className={`mt-20`}>
       <div className="container mx-auto py-8">

@@ -93,7 +93,10 @@ import store from "@/redux/store";
 import "./globals.css";
 import Sidebar from "@/components/SideNav";
 import Header from "@/components/Header";
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 
+const stripePromise = loadStripe("pk_test_51NkKxCIDvqClqRenONst52QWoDYzp6xIDzhQPvomHMA0cyMgrXEMuRdTDUMMMOqu5wraiYxVXA73XZIerEU0eECU00HnhGvGpe"); 
 // Create persistor only once
 const persistor = persistStore(store);
 
@@ -101,11 +104,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <Provider store={store}>
-          <PersistGate loading={null} persistor={persistor}>
-            <AppLayout>{children}</AppLayout>
-          </PersistGate>
-        </Provider>
+          <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}>
+              <Elements stripe={stripePromise}>
+                <AppLayout>{children}</AppLayout>
+              </Elements>
+            </PersistGate>
+          </Provider>
       </body>
     </html>
   );
