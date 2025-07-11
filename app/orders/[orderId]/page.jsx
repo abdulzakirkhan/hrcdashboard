@@ -1,7 +1,7 @@
 "use client";
 
 import { FaArrowLeftLong } from "react-icons/fa6";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 // import { ordersData } from '../../data';
 import Image from "next/image";
 import { RiBankCardFill } from "react-icons/ri";
@@ -15,7 +15,9 @@ import { MdPayment } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { ORDERS_TYPES } from "@/constants";
 import { getOrderTypeValues } from "@/config/myWebHelpers";
-import { useGetOrderByPaymentTypeQuery } from "@/redux/order/ordersApi";
+import { useGetOrderByPaymentTypeQuery, useGetUserCurrencyAndCountryQuery } from "@/redux/order/ordersApi";
+import { getCurrency, getCurrencyNameFromPhone, getIntOrderConsumableAmnts } from "@/config/helpers";
+import { useGetWalletAmountQuery } from "@/redux/payments/paymentApi";
 const OrderDetail = ({ params }) => {
   const { orderId } = React.use(params); // Acc
   const orderType = ORDERS_TYPES.ALL_ORDERS;
@@ -36,13 +38,32 @@ const OrderDetail = ({ params }) => {
     data: getAllOrders = { result: { orderAll: [] } },
     isFetching: getAllOrdersLoading,
   } = useGetOrderByPaymentTypeQuery(getAllorderBody);
+  const currencyFormData = new FormData();
+  currencyFormData.append('clientid', user?.userid);
+  const { data: userDataCurrencies } =
+    useGetUserCurrencyAndCountryQuery(currencyFormData);
+  
+    const {
+      data: walletAmount,
+      isLoading: walletAmountLoading,
+      refetch: walletAmountRefech,
+    } = useGetWalletAmountQuery({
+      clientId: user?.userid,
+      currency: getCurrency(getCurrencyNameFromPhone(user?.user_contact_no)),
+      nativecurrency: userDataCurrencies?.result?.currency
+        ? getCurrency(userDataCurrencies?.result?.currency)
+        : getCurrency(getCurrencyNameFromPhone(user?.user_contact_no)),
+    });
 
-  const ordersData = getAllOrders?.result?.orderAll || [];
+    const ordersData = getAllOrders?.result?.orderAll || [];
+    
   const order = ordersData.find((o) => o.order_id === orderId);
   const handleCheckboxChange = () => {
-    setIsChecked(!isChecked);
+    if(walletAmount?.amount > order?.balanceamount){
+      setIsChecked(!isChecked);
+    }
   };
-  const processingFee = (Number(amount) * 4) / 100;
+
   const vatFee = (Number(amount) * 20) / 100;
 
   const handleProceedToPay = () => {
@@ -62,7 +83,8 @@ const OrderDetail = ({ params }) => {
   const totalAmount = Number(amount) + processingFee + vatFee; // Total amount including all feeses
 
   console.log("order", order);
-  console.log("getAllOrders", getAllOrders);
+
+  console.log("walletAmount", walletAmount);
 
   if (summaryTab === "summary") {
     return (
@@ -175,6 +197,19 @@ const OrderDetail = ({ params }) => {
     );
   }
 
+  // useEffect(() => {
+  //   if(getAllOrders?.result?.orderAll){
+  //     setOrdersData(getAllOrders?.result?.orderAll)
+  //   }
+  // }, [getAllOrders])
+
+  const shared = useSelector((state) => state?.shared || {});
+  const { serviceChargePercentage, vatFeePercentage } = shared;
+  const serviceChargeFee = serviceChargePercentage;
+ const vatChargeFee = (order?.balanceamount * 20) / 100;
+ const processingFee = (order?.balanceamount * 4) / 100;
+
+    
   return (
     <>
       {/* Display Checkout Page if showCheckout is true */}
@@ -251,7 +286,7 @@ const OrderDetail = ({ params }) => {
                           <h1>Order Summary</h1>
                           <div className="flex gap-6 mt-5 items-center">
                             <p className="text-sm text-grey">Price :</p>
-                            <p className="text-grey">{order.totalPrice}</p>
+                            <p className="text-grey">{order?.balanceamount}</p>
                           </div>
                           <div className="flex gap-6 mt-2 items-center">
                             <p className="text-sm text-grey">
@@ -261,7 +296,7 @@ const OrderDetail = ({ params }) => {
                           </div>
                           <div className="flex gap-6 mt-2 items-center">
                             <p className="text-sm text-grey">VAT (20%) :</p>
-                            <p className="text-grey">$0.20</p>
+                            <p className="text-grey">$ {vatChargeFee}</p>
                           </div>
                           <div className="flex gap-6 mt-2 items-center">
                             <p className="text-sm text-grey">Payment Method:</p>
@@ -372,7 +407,7 @@ const OrderDetail = ({ params }) => {
                       className={`flex justify-between border-2 h-48 rounded-xl p-5 ${
                         selectedCard === "wallet" ? "border-blue-500" : ""
                       }`}
-                      onClick={() => handleCardSelect("wallet")}
+                      // onClick={() => handleCardSelect("wallet")}
                     >
                       <div>
                         <div className="flex gap-2 items-center">
@@ -389,13 +424,13 @@ const OrderDetail = ({ params }) => {
                           <span className="text-sm text-gray-600">
                             Reward Amount:
                           </span>
-                          <span className="text-sm text-gray-600">$0.05</span>
+                          <span className="text-sm text-gray-600">$ {walletAmount?.rewardsamount ? Number(walletAmount?.rewardsamount).toFixed(2) : "2.3"}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-gray-600">
                             Wallet Amount:
                           </span>
-                          <span className="text-sm text-gray-600">$0.00</span>
+                          <span className="text-sm text-gray-600">$ {walletAmount?.amount ? Number(walletAmount?.amount).toFixed(2) : "0:00"}</span>
                         </div>
                       </div>
                       <div>
@@ -440,14 +475,14 @@ const OrderDetail = ({ params }) => {
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm">Price:</span>
                           <span className="text-grey text-sm">
-                            {order.totalPrice}
+                            {order?.balanceamount}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm">
                             Processing fee (4%):
                           </span>
-                          <span className="text-grey text-sm">$0.40</span>
+                          <span className="text-grey text-sm">$ {processingFee}</span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm line-through">
@@ -457,7 +492,7 @@ const OrderDetail = ({ params }) => {
                         </div>
                         <div className="text-end mt-3">
                           <span className="text-lg text-primary">
-                            Total : {order.totalPrice}
+                            Total : {order.balanceamount + processingFee}
                           </span>
                         </div>
                       </div>
@@ -511,22 +546,22 @@ const OrderDetail = ({ params }) => {
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm">Price:</span>
                           <span className="text-grey text-sm">
-                            {order.totalPrice}
+                            {order?.balanceamount}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm">
                             Processing fee (4%):
                           </span>
-                          <span className="text-grey text-sm">$0.40</span>
+                          <span className="text-grey text-sm">$ {processingFee}</span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm">VAT (20%):</span>
-                          <span className="text-grey text-sm">$2.00</span>
+                          <span className="text-grey text-sm">${vatChargeFee}</span>
                         </div>
                         <div className="text-end mt-3">
                           <span className="text-lg text-primary">
-                            Total : {order.totalPrice}
+                            Total : {order?.balanceamount + processingFee + vatChargeFee}
                           </span>
                         </div>
                       </div>
@@ -549,22 +584,22 @@ const OrderDetail = ({ params }) => {
               >
                 <div
                   className={`bg-no-repeat bg-center md:w-full bg-cover flex justify-center items-center rounded-tl-2xl ${
-                    order.payment_status === 0 ? "min-h-32 px-4" : ""
+                    order?.payment_status === 0 ? "min-h-32 px-4" : ""
                   } rounded-tr-2xl`}
                   style={{
                     height: `${order?.payment_status === 0 ? "300px" : ""}`,
                     backgroundImage: `url(${
-                      order.payment_status === 1
+                      order?.payment_status === 1
                         ? "/orders/banner.svg"
-                        : order.payment_status === 2
+                        : order?.payment_status === 2
                         ? "/orders/yellobanner.svg"
                         : "/orders/red.svg"
                     })`,
                   }}
                 >
                   <div className="grid w-full px-8 md:grid-cols-12 justify-between items-center">
-                    {order.payment_status === 1 ||
-                    order.payment_status === 2 ? (
+                    {order?.payment_status === 1 ||
+                    order?.payment_status === 2 ? (
                       <>
                         <motion.div
                           className="w-full md:col-span-6 mt-5 md:mt-0"
@@ -605,9 +640,9 @@ const OrderDetail = ({ params }) => {
                                 className={`stroke-current ${
                                   order?.payment_status === 1
                                     ? "text-[#3BB537]"
-                                    : order.payment_status === 2
+                                    : order?.payment_status === 2
                                     ? "text-yellow"
-                                    : order.payment_status === 0
+                                    : order?.payment_status === 0
                                     ? "text-grey"
                                     : ""
                                 } dark:text-blue-500`}
@@ -619,9 +654,9 @@ const OrderDetail = ({ params }) => {
                             </svg>
                             <div className={`absolute top-1/2 ${order?.payment_status === 2 ? "!right-16" : "!right-14"} md:right-10 transform -translate-y-1/2 -translate-x-1/2`}>
                               <span className="text-center text-2xl font-bold text-black dark:text-blue-500">
-                                {order.payment_status === 2
+                                {order?.payment_status === 2
                                   ? 50
-                                  : order.payment_status === 1
+                                  : order?.payment_status === 1
                                   ? 100
                                   : 0}
                                 %
@@ -676,7 +711,7 @@ const OrderDetail = ({ params }) => {
                   transition={{ duration: 0.8, delay: 1.6 }}
                 >
                   <div className="flex wrap gap-3 items-center">
-                    {order.payment_status === 1 ? (
+                    {order?.payment_status === 1 ? (
                       <button className="btnText mx-2 text-white bg-primary flex justify-center items-center gap-3 rounded-md w-219 w-[219] h-[40]">
                         <Image
                           src={"/orders/meeting.svg"}

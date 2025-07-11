@@ -4,7 +4,7 @@ import Link from "next/link";
 import { MdPayment } from "react-icons/md";
 import { FaArrowLeftLong } from "react-icons/fa6";
 import React, { useEffect, useState } from "react";
-import { FaInfoCircle } from "react-icons/fa";
+import { FaCcAmex, FaCcDiscover, FaCcMastercard, FaCcVisa, FaCreditCard, FaInfoCircle } from "react-icons/fa";
 import { useGetUserCurrencyAndCountryQuery } from "@/redux/order/ordersApi";
 import { useSelector } from "react-redux";
 import { getCurrency, getCurrencyNameFromPhone } from "@/config/helpers";
@@ -80,7 +80,9 @@ const page = () => {
 
   const [amountBank, setAmountBank] = useState("");
   const [selectedAmount, setSelectedAmount] = useState("");
-
+  const currency =
+    userDataCurrencies?.result?.currency ??
+    getCurrencyNameFromPhone(user?.user_contact_no);
   // Function to handle the button click and update the input
   const handleButtonClick = (value) => {
     setAmount(value); // Update input field with the selected value
@@ -132,14 +134,13 @@ const page = () => {
     }
   };
 
-  console.log("allCards", getAllCards);
 
 
 
 
    useEffect(() => {
     if (getAllCards?.length > 0) {
-      setSelectedCardId(getAllCards[0].id); // Select first card by default
+      setSelectedCardId(getAllCards[0]); // Select first card by default
     }
   }, [getAllCards]);
 
@@ -165,14 +166,59 @@ const page = () => {
 
 
   const getCardLogo = (brand) => {
-  const logos = {
-    visa: '/path-to-visa-logo.svg',
-    mastercard: '/path-to-mastercard-logo.svg',
-    amex: '/path-to-amex-logo.svg',
-    // etc.
+    const brandLower = brand?.toLowerCase();
+  const iconSize = 24; // Adjust size as needed
+
+    switch (brandLower) {
+      case 'visa':
+        return <FaCcVisa size={iconSize} className="text-blue-900" />;
+      case 'mastercard':
+        return <FaCcMastercard size={iconSize} className="text-red-600" />;
+      case 'amex':
+        return <FaCcAmex size={iconSize} className="text-blue-500" />;
+      case 'discover':
+        return <FaCcDiscover size={iconSize} className="text-orange-600" />;
+      default:
+        return <FaCreditCard size={iconSize} className="text-gray-500" />;
+    }
   };
-  return logos[brand];
-};
+
+
+
+  const handleTopUp = async () => {
+    try {
+
+
+      const stripToken = selectedCardId?.stripekey || getAllCards[0]?.stripekey;
+    
+      const payload = {
+          currency: getCurrency(currency),
+          amount: amount,
+          userId: user?.userid,
+          token: stripToken,
+          viafrom: 'stripe',
+      }
+
+      const res = await makePayment(payload);
+
+      const { data: respData, error } = res || {};
+
+      console.log("respData", respData);
+      if (respData) {
+          if (respData?.result == 'Successfully Added Into Wallet') {
+            toast.success(respData?.result || "Successfully Added Into Wallet");
+          } else if (respData?.result == "Stripe API Error: Your card was declined.") {
+            toast.error(respData?.result || "Error while topping up wallet");
+          } else
+            toast.error(respData?.result || "Error while topping up wallet");
+        }
+    } catch (error) {
+      toast.error("Error while topping up wallet");
+    }
+  }
+
+
+  // console.log("selectedcardId", selectedCardId);
   return (
     <>
       <section className="mt-20">
@@ -248,72 +294,66 @@ const page = () => {
 
 
               {getAllCards && getAllCards?.length > 0 && (
-  <div className="md:col-span-12 space-y-4">
-    <h3 className="text-lg font-semibold text-gray-800">Select Payment Method</h3>
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      {getAllCards?.map((card) => {
-        const isSelected = selectedCardId === card.id;
-        const cardLogo = getCardLogo(card.brand); // You would need to implement this function
-        
-        return (
-          <div
-            key={card.id}
-            className={`relative bg-white rounded-xl p-5 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
-              isSelected 
-                ? "border-2 border-blue-500 ring-4 ring-blue-100 bg-blue-50" 
-                : "border border-gray-200 hover:border-gray-300"
-            }`}
-            onClick={() => handleCardSelect(card.id)}
-          >
-            {/* Card Header */}
-            <div className="flex justify-between items-start mb-4">
-              <span className="font-medium text-xs uppercase tracking-wide text-gray-500">
-                {card?.cardtype}
-              </span>
-              {cardLogo && (
-                <img 
-                  src={cardLogo} 
-                  alt={card.brand} 
-                  className="h-6 w-auto object-contain"
-                />
-              )}
-            </div>
-            
-            {/* Card Number */}
-            <div className="mb-5">
-              <div className="flex items-center space-x-2">
-                {[...Array(3)].map((_, i) => (
-                  <span key={i} className="text-xl">•</span>
-                ))}
-                <span className="text-lg font-medium text-gray-800">
-                  {card?.fourdigit}
-                </span>
-              </div>
-            </div>
-            
-            {/* Card Footer */}
-            <div className="flex justify-between items-center">
-              <div className="text-sm text-gray-600">
-                <span className="block text-xs text-gray-400">Expires</span>
-                {card.exp_month}/{card.exp_year}
-              </div>
-              
-              {isSelected && (
-                <div className="absolute top-3 right-3">
-                  <div className="bg-blue-500 text-white rounded-full p-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
+                <div className="md:col-span-12 space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-800">Select Payment Method</h3>
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    {getAllCards?.map((card) => {
+                      const isSelected = selectedCardId?.id === card?.id;
+                      const cardLogo = getCardLogo(card.brand); // You would need to implement this function
+                      
+                      return (
+                        <div
+                          key={card.id}
+                          className={`relative bg-white rounded-xl p-5 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
+                            isSelected 
+                              ? "border-2 border-blue-500 ring-4 ring-blue-100 bg-blue-50" 
+                              : "border border-gray-200 hover:border-gray-300"
+                          }`}
+                          onClick={() => handleCardSelect(card)}
+                        >
+                          {/* Card Header */}
+                          <div className="flex justify-between items-start mb-4">
+                            <span className="font-medium text-xs uppercase tracking-wide text-gray-500">
+                              {card?.cardtype}
+                            </span>
+                            {cardLogo}
+                          </div>
+                          
+                          {/* Card Number */}
+                          <div className="mb-5">
+                            <div className="flex items-center space-x-2">
+                              {[...Array(3)].map((_, i) => (
+                                <span key={i} className="text-xl">•</span>
+                              ))}
+                              <span className="text-lg font-medium text-gray-800">
+                                {card?.fourdigit}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Card Footer */}
+                          <div className="flex justify-between items-center">
+                            <div className="text-sm text-gray-600">
+                              <span className="block text-xs text-gray-400">Expires</span>
+                              {card.exp_month}/{card.exp_year}
+                            </div>
+                            
+                            {isSelected && (
+                              <div className="absolute top-3 right-3">
+                                <div className="bg-blue-500 text-white rounded-full p-1">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  </div>
-)}
 
               {/* Payment Method */}
               <div className="md:col-span-12">
@@ -344,7 +384,7 @@ const page = () => {
                   Top-Up Amount:{" "}
                   <span className="text-blue-600 font-bold">${amount}</span>
                 </p>
-                <button className="px-6 py-2 bg-primary text-white rounded-lg shadow-md hover:bg-blue-700 transition">
+                <button onClick={handleTopUp} className="px-6 py-2 bg-primary text-white rounded-lg shadow-md hover:bg-blue-700 transition">
                   Confirm Top-Up
                 </button>
               </div>

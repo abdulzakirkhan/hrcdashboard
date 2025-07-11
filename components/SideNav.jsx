@@ -82,17 +82,15 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     }
   }
 
-
-useEffect(() => {
-  if (profileData) {
-    const updatedUser = {
-      profileImage: "https://staging.portalteam.org" + profileData?.path,
-      name: profileData?.name,
-    };
-    setUserData(updatedUser);
-  }
-}, [profileData]);
-  
+  useEffect(() => {
+    if (profileData) {
+      const updatedUser = {
+        profileImage: "https://staging.portalteam.org" + profileData?.path,
+        name: profileData?.name,
+      };
+      setUserData(updatedUser);
+    }
+  }, [profileData]);
 
   return (
     <div
@@ -169,33 +167,35 @@ useEffect(() => {
 
       {/* Logout Confirmation Modal */}
       {showPopUp && (
-        <div
-          className="fixed inset-0 flex justify-center items-center"
-          onClick={() => setShowPopUp(false)}
-        >
+        <>
           <div
-            className="fixed rounded-lg flex border-2 flex-col shadow-xl items-center gap-2 w-1/3 backdrop-blur-xl p-3 md:p-6"
-            style={{ top: "30%", left: "40%" }}
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+            className="fixed inset-0 flex justify-center items-center"
+            onClick={() => setShowPopUp(false)}
           >
-            <h1 className="text-black">Confirm Logout</h1>
-            <h3 className="text-black">Are you sure you want to logout?</h3>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handleClick}
-                className="text-black px-6 bg-white py-2 rounded-md border-2 border-gray-500"
-              >
-                Cancel
-              </button>
-              <button
-                className="px-6 py-2 rounded-md text-white bg-[#DC3545]"
-                onClick={LogOutUser}
-              >
-                Log Out
-              </button>
+            <div
+              className="fixed rounded-lg flex border-2 flex-col shadow-xl items-center gap-2 w-1/3 backdrop-blur-xl p-3 md:p-6"
+              style={{ top: "30%", left: "40%" }}
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+            >
+              <h1 className="text-black">Confirm Logout</h1>
+              <h3 className="text-black">Are you sure you want to logout?</h3>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleClick}
+                  className="text-black px-6 bg-white py-2 rounded-md border-2 border-gray-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-6 py-2 rounded-md text-white bg-[#DC3545]"
+                  onClick={LogOutUser}
+                >
+                  Log Out
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

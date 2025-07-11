@@ -126,10 +126,6 @@ const DashboardPage = () => {
     };
   }, []);
   useEffect(() => {
-    const filteredOrders = filterOrders(allOrders, applyFilter);
-    setOrderToShown(filteredOrders);
-  }, [applyFilter]);
-  useEffect(() => {
     if (
       getAllOrders?.result?.orderAll?.length > 0 &&
       Array.isArray(getAllOrders?.result?.orderAll)
