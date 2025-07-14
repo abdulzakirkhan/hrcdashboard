@@ -8,16 +8,44 @@ import { RiBankCardFill } from "react-icons/ri";
 import Link from "next/link";
 import { FaCircleInfo } from "react-icons/fa6";
 import { MdPayments } from "react-icons/md";
-import { FaRegCreditCard } from "react-icons/fa";
+import {
+  FaCcAmex,
+  FaCcDiscover,
+  FaCcMastercard,
+  FaCcVisa,
+  FaCreditCard,
+  FaRegCreditCard,
+} from "react-icons/fa";
 import { motion } from "framer-motion";
 import { FaWallet } from "react-icons/fa";
 import { MdPayment } from "react-icons/md";
 import { useSelector } from "react-redux";
 import { ORDERS_TYPES } from "@/constants";
 import { getOrderTypeValues } from "@/config/myWebHelpers";
-import { useGetOrderByPaymentTypeQuery, useGetUserCurrencyAndCountryQuery } from "@/redux/order/ordersApi";
-import { getCurrency, getCurrencyNameFromPhone, getIntOrderConsumableAmnts } from "@/config/helpers";
-import { useGetWalletAmountQuery } from "@/redux/payments/paymentApi";
+import {
+  useGetOrderByPaymentTypeQuery,
+  useGetUserCurrencyAndCountryQuery,
+} from "@/redux/order/ordersApi";
+import {
+  getCurrency,
+  getCurrencyNameFromPhone,
+  getIntOrderConsumableAmnts,
+} from "@/config/helpers";
+import {
+  useAddCardMutation,
+  useGetAllCardsQuery,
+  useGetWalletAmountQuery,
+  useInitateOrderPaymentMutation,
+  useTipToWriterPayemntMutation,
+} from "@/redux/payments/paymentApi";
+import toast from "react-hot-toast";
+import {
+  CardCvcElement,
+  CardExpiryElement,
+  CardNumberElement,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
 const OrderDetail = ({ params }) => {
   const { orderId } = React.use(params); // Acc
   const orderType = ORDERS_TYPES.ALL_ORDERS;
@@ -39,27 +67,27 @@ const OrderDetail = ({ params }) => {
     isFetching: getAllOrdersLoading,
   } = useGetOrderByPaymentTypeQuery(getAllorderBody);
   const currencyFormData = new FormData();
-  currencyFormData.append('clientid', user?.userid);
+  currencyFormData.append("clientid", user?.userid);
   const { data: userDataCurrencies } =
     useGetUserCurrencyAndCountryQuery(currencyFormData);
-  
-    const {
-      data: walletAmount,
-      isLoading: walletAmountLoading,
-      refetch: walletAmountRefech,
-    } = useGetWalletAmountQuery({
-      clientId: user?.userid,
-      currency: getCurrency(getCurrencyNameFromPhone(user?.user_contact_no)),
-      nativecurrency: userDataCurrencies?.result?.currency
-        ? getCurrency(userDataCurrencies?.result?.currency)
-        : getCurrency(getCurrencyNameFromPhone(user?.user_contact_no)),
-    });
 
-    const ordersData = getAllOrders?.result?.orderAll || [];
-    
+  const {
+    data: walletAmount,
+    isLoading: walletAmountLoading,
+    refetch: walletAmountRefech,
+  } = useGetWalletAmountQuery({
+    clientId: user?.userid,
+    currency: getCurrency(getCurrencyNameFromPhone(user?.user_contact_no)),
+    nativecurrency: userDataCurrencies?.result?.currency
+      ? getCurrency(userDataCurrencies?.result?.currency)
+      : getCurrency(getCurrencyNameFromPhone(user?.user_contact_no)),
+  });
+
+  const ordersData = getAllOrders?.result?.orderAll || [];
+
   const order = ordersData.find((o) => o.order_id === orderId);
   const handleCheckboxChange = () => {
-    if(walletAmount?.amount > order?.balanceamount){
+    if (walletAmount?.amount > order?.balanceamount) {
       setIsChecked(!isChecked);
     }
   };
@@ -79,24 +107,485 @@ const OrderDetail = ({ params }) => {
     setActiveTab(tab);
     handleCardSelect(mode);
   };
+  const shared = useSelector((state) => state?.shared || {});
+  const { serviceChargePercentage, vatFeePercentage } = shared;
+  const serviceChargeFee = serviceChargePercentage;
+  const vatChargeFee = (order?.balanceamount * 20) / 100;
+  const processingFee = (order?.balanceamount * 4) / 100;
+  const [selectedCardId, setSelectedCardId] = useState(null);
+  const totalAmount = Number(amount) + processingFee + vatChargeFee; // Total amount including all feeses
+  const [addCardModal, setAddCardModal] = useState(false);
+  const stripe = useStripe();
+  const elements = useElements();
+  const [tipToWriterPayment, { isLoading: tipToWriterPaymentLoading }] =
+    useTipToWriterPayemntMutation();
 
-  const totalAmount = Number(amount) + processingFee + vatFee; // Total amount including all feeses
+  const handleViewModal = () => {
+    setAddCardModal(!addCardModal);
+  };
 
-  console.log("order", order);
+  const [createOrder, { isLoading: createOrderLoading }] =
+    useInitateOrderPaymentMutation();
 
-  console.log("walletAmount", walletAmount);
+  const [addCard, { isLoading: addCardLoading }] = useAddCardMutation();
+  const {
+    data: getAllCards = { result: { result: {} } },
+    isLoading: allCardsLoading,
+  } = useGetAllCardsQuery(user?.userid);
 
+  const handleAddCard = async (cardData) => {
+    try {
+      const res = await addCard({
+        clientid: user?.userid,
+        cardtype: cardData?.cardDetails?.brand,
+        Lastfourdigit: cardData?.cardDetails?.last4,
+        Stripekey: cardData?.stripeToken,
+      });
+
+      const { data: respData, error } = res;
+
+      // Network or API error
+      if (error) {
+        toast.error(
+          "Something went wrong while adding the card. Please try again."
+        );
+        return false;
+      }
+
+      // API returned an error in the response
+      if (respData?.error) {
+        toast.error(respData?.result?.result?.result || "Failed to add card.");
+        return false;
+      }
+
+      // Success case
+      toast.success(
+        respData?.result?.result?.result || "Card added successfully."
+      );
+      return true;
+    } catch (err) {
+      // Fallback for unexpected exceptions
+      toast.error("An unexpected error occurred.");
+      console.error("Add card error:", err);
+      return false;
+    }
+  };
+
+  const handlePayment = async () => {
+    console.log("cliked");
+  };
+  console.log("user : ", user);
+
+  // const handlePaymentsss = async () => {
+  //   try {
+  //     const selectedCard = allCards?.find((card) => card?.id == selectedId);
+  //     const stripToken = !selectedId
+  //       ? allCards?.[0]?.stripekey
+  //       : selectedCard?.stripekey;
+
+  //     if (ordersToPass?.withVat) {
+  //       const formData = new FormData();
+
+  //       formData.append("token", stripToken);
+  //       formData.append("currency", ordersToPass?.currency);
+  //       formData.append(
+  //         "price",
+  //         getFormattedPriceWith3(
+  //           Number(ordersToPass?.orderPrice) + Number(AddOnTotal)
+  //         )
+  //       );
+  //       formData.append(
+  //         "useramount",
+  //         ordersToPass?.userAmount
+  //           ? getFormattedPriceWith3(Number(ordersToPass?.userAmount))
+  //           : getFormattedPriceWith3(
+  //               Number(ordersToPass?.orderPrice) + Number(AddOnTotal)
+  //             )
+  //       );
+  //       formData.append("clientid", user?.userid);
+  //       formData.append(
+  //         "servicecharges",
+  //         getFormattedPriceWith3(consumableAmounts.actualServiceFee)
+  //       );
+  //       formData.append(
+  //         "deadline",
+  //         ordersToPass?.deadline
+  //           ? DateTime.fromISO(ordersToPass?.deadline).toFormat("yyyy-LL-dd")
+  //           : undefined
+  //       );
+  //       formData.append("category", ordersToPass?.catagery);
+  //       formData.append("desc", ordersToPass?.description);
+  //       formData.append("academiclevel", ordersToPass?.academicLevel);
+  //       formData.append("papertopic", ordersToPass?.paperTopic);
+  //       formData.append("noofpage", ordersToPass?.noOfPages);
+  //       formData.append("country", ordersToPass?.country);
+  //       formData.append("taskdoneby", ordersToPass?.taskdoneby);
+  //       formData.append("typeofpaper", ordersToPass?.typeOfPaper);
+  //       formData.append("itsubjectid", ordersToPass?.itSubject);
+  //       formData.append(
+  //         "rewardamount",
+  //         getFormattedPriceWith3(consumableAmounts.rewardConsumableAmount)
+  //       );
+  //       formData.append(
+  //         "walletamount",
+  //         getFormattedPriceWith3(consumableAmounts.walletConsumableAmount)
+  //       );
+  //       formData.append(
+  //         "vat",
+  //         getFormattedPriceWith3(consumableAmounts.actualVatFee)
+  //       );
+  //       formData.append(
+  //         "discountamount",
+  //         getFormattedPriceWith3(consumableAmounts.finalDiscountAmount)
+  //       );
+  //       formData.append("discountpercentage", ordersToPass?.discountPercent);
+  //       formData.append(
+  //         "discountflag",
+  //         ordersToPass?.discountPercent > 0 ? 1 : 0
+  //       );
+  //       formData.append(
+  //         "viafrom",
+  //         consumableAmounts.cardConsumableAmount > 0 ? "stripe" : "wallet"
+  //       );
+  //       formData.append("notificationid", ordersToPass?.notificationId);
+  //       formData.append("attachment", {
+  //         uri: ordersToPass?.attachment?.uri,
+  //         type: ordersToPass?.attachment?.type,
+  //         name:
+  //           ordersToPass?.attachment?.name ??
+  //           ordersToPass?.attachment?.fileName,
+  //       });
+  //       formData.append("email", ordersToPass?.meetingLoginId);
+  //       formData.append("password", ordersToPass?.meetingLoginpassword);
+  //       formData.append(
+  //         "meeting_date",
+  //         ordersToPass?.meetingDate
+  //           ? DateTime.fromISO(ordersToPass?.meetingDate).toFormat("yyyy-LL-dd")
+  //           : ""
+  //       );
+  //       formData.append("start_time", ordersToPass?.meetingStartTime);
+  //       formData.append("end_time", ordersToPass?.meetingEndTime);
+  //       formData.append("meeting_hours", ordersToPass?.meetingDurationInHours);
+  //       formData.append("createdByBot", ordersToPass?.createdByBot);
+  //       formData.append("addOns", JSON.stringify(addOns));
+  //       formData.append("AddOnTotal", AddOnTotal);
+  //       formData.append("noofwords", ordersToPass?.noOfWords);
+  //       formData.append("order_id", ordersToPass?.postOrderMeetingOrderId);
+  //       formData.append(
+  //         "additionalAmount",
+  //         getFormattedPriceWith3(consumableAmounts.additionalAmount)
+  //       );
+
+  //       if (paymentScreenshot) {
+  //         formData.append("screenshot", {
+  //           uri: paymentScreenshot,
+  //           type: "image/png",
+  //           name: "payment_screen_shot.png",
+  //         });
+  //       }
+
+  //       const res = await createOrder(formData);
+
+  //       const { data: respData, error } = res || {};
+
+  //       if (respData?.result == "Order Placed Successfully") {
+  //         toast.success("Order Placed Successfully");
+
+  //         navigation.pop(1);
+  //         dispatch(changeIsRecurringOrder(false));
+  //         dispatch(changeRecurringOrderDiscount(null));
+  //         navigation.navigate(navigationRoutes.PaymentResult, {
+  //           currencySymbol: getCurrencySymbol(ordersToPass?.currency),
+  //           serviceCharges: getFormattedPrice(
+  //             consumableAmounts.actualServiceFee
+  //           ),
+  //           totalAmount: `${getFormattedPrice(
+  //             Number(consumableAmounts.totalWalletConsumableAmount) +
+  //               Number(consumableAmounts.cardConsumableAmount) -
+  //               Number(consumableAmounts.actualServiceFee) -
+  //               Number(consumableAmounts.actualVatFee)
+  //           )}`,
+  //           customerId: user?.userid,
+  //           customerName: user?.clientname,
+  //           cardConsumableAmount:
+  //             Number(consumableAmounts?.cardConsumableAmount) -
+  //             Number(consumableAmounts.actualServiceFee) -
+  //             Number(consumableAmounts.actualVatFee),
+  //           totalWalletConsumableAmount:
+  //             consumableAmounts?.totalWalletConsumableAmount,
+  //           rewardConsumable: consumableAmounts.rewardConsumableAmount,
+  //           walletConsumable: consumableAmounts.walletConsumableAmount,
+  //           vatAmount: getFormattedPrice(
+  //             consumableAmounts?.actualVatFee > 0
+  //               ? consumableAmounts?.actualVatFee
+  //               : 0
+  //           ),
+  //           isWithVat: ordersToPass?.withVat,
+  //           discountpercent: ordersToPass?.discountPercent,
+  //           discountAmount: consumableAmounts.finalDiscountAmount,
+  //           remainingAmount:
+  //             Number(ordersToPass?.orderPrice) -
+  //             Number(ordersToPass?.userAmount),
+  //           additionalAmount: getFormattedPrice(
+  //             consumableAmounts.additionalAmount
+  //           ),
+  //         });
+  //       } else {
+  //         toast.error("Something went wrong while placing the order.");
+  //       }
+  //     } else {
+  //       const meezanLinkRes = await meezanPaymentLink({
+  //         amount: getFormattedPriceWith3(
+  //           Number(consumableAmounts.cardConsumableAmount) +
+  //             Number(
+  //               percentOfAmount(
+  //                 consumableAmounts.cardConsumableAmount,
+  //                 serviceChargeFee
+  //               )
+  //             )
+  //         ),
+  //         currency: getCurrency(ordersToPass?.currency),
+  //       });
+
+  //       if (
+  //         meezanLinkRes?.data?.link ||
+  //         consumableAmounts.cardConsumableAmount == 0
+  //       ) {
+  //         navigation?.navigate(navigationRoutes.InitiateOrderMeezanGateway, {
+  //           link: meezanLinkRes?.data?.link,
+  //           meezanPaymentData: {
+  //             token: stripToken,
+  //             currency: ordersToPass?.currency,
+  //             price: getFormattedPriceWith3(
+  //               Number(ordersToPass?.orderPrice) + Number(AddOnTotal)
+  //             ),
+  //             userAmount: ordersToPass?.userAmount
+  //               ? getFormattedPriceWith3(
+  //                   Number(ordersToPass?.userAmount) + Number(AddOnTotal)
+  //                 )
+  //               : getFormattedPriceWith3(
+  //                   Number(ordersToPass?.orderPrice) + Number(AddOnTotal)
+  //                 ),
+  //             clientid: user?.userid,
+  //             servicecharges: getFormattedPriceWith3(
+  //               consumableAmounts.actualServiceFee
+  //             ),
+  //             deadline: ordersToPass?.deadline
+  //               ? DateTime.fromISO(ordersToPass?.deadline).toFormat(
+  //                   "yyyy-LL-dd"
+  //                 )
+  //               : undefined,
+  //             category: ordersToPass?.catagery,
+  //             desc: ordersToPass?.description,
+  //             academiclevel: ordersToPass?.academicLevel,
+  //             papertopic: ordersToPass?.paperTopic,
+  //             noofpage: ordersToPass?.noOfPages,
+  //             country: ordersToPass?.country,
+  //             taskdoneby: ordersToPass?.taskdoneby,
+  //             typeofpaper: ordersToPass?.typeOfPaper,
+  //             fitsubjectid: ordersToPass?.itSubject,
+  //             rewardamount: getFormattedPriceWith3(
+  //               consumableAmounts.rewardConsumableAmount
+  //             ),
+  //             walletamount: getFormattedPriceWith3(
+  //               consumableAmounts.walletConsumableAmount
+  //             ),
+  //             vat: getFormattedPriceWith3(consumableAmounts.actualVatFee),
+  //             discountamount: getFormattedPriceWith3(
+  //               consumableAmounts.finalDiscountAmount
+  //             ),
+  //             discountpercentage: ordersToPass?.discountPercent,
+  //             discountflag: ordersToPass?.discountPercent > 0 ? 1 : 0,
+  //             viafrom:
+  //               consumableAmounts.cardConsumableAmount > 0
+  //                 ? "meezan"
+  //                 : "wallet",
+  //             notificationid: ordersToPass?.notificationId,
+  //             attachment: {
+  //               uri: ordersToPass?.attachment?.uri,
+  //               type: ordersToPass?.attachment?.type,
+  //               name:
+  //                 ordersToPass?.attachment?.name ??
+  //                 ordersToPass?.attachment?.fileName,
+  //             },
+  //             meetingLoginId: ordersToPass?.meetingLoginId,
+  //             meetingLoginpassword: ordersToPass?.meetingLoginpassword,
+  //             meetingDate: ordersToPass?.meetingDate
+  //               ? DateTime.fromISO(ordersToPass?.meetingDate).toFormat(
+  //                   "yyyy-LL-dd"
+  //                 )
+  //               : "",
+  //             meetingStartTime: ordersToPass?.meetingStartTime,
+  //             meetingEndTime: ordersToPass?.meetingEndTime,
+  //             createdByBot: ordersToPass?.createdByBot,
+  //             addOns: JSON.stringify(addOns),
+  //             AddOnTotal: AddOnTotal,
+  //             noOfWords: ordersToPass?.noOfWords,
+  //             meetingDurationInHours: ordersToPass?.meetingDurationInHours,
+  //             postOrderMeetingOrderId: ordersToPass?.postOrderMeetingOrderId,
+  //             additionalAmount: consumableAmounts.additionalAmount,
+  //             transactionId: meezanLinkRes?.data?.transactionId,
+  //             myorderid: meezanLinkRes?.data?.transactionId,
+  //           },
+  //           paymentScreenshot,
+  //           recepidData: {
+  //             currencySymbol: getCurrencySymbol(ordersToPass?.currency),
+  //             serviceCharges: getFormattedPrice(
+  //               consumableAmounts.actualServiceFee
+  //             ),
+  //             totalAmount: `${getFormattedPrice(
+  //               Number(consumableAmounts.totalWalletConsumableAmount) +
+  //                 Number(consumableAmounts.cardConsumableAmount) -
+  //                 Number(consumableAmounts.actualServiceFee) -
+  //                 Number(consumableAmounts.actualVatFee)
+  //             )}`,
+  //             customerId: user?.userid,
+  //             customerName: user?.clientname,
+  //             cardConsumableAmount:
+  //               Number(consumableAmounts?.cardConsumableAmount) -
+  //               Number(consumableAmounts.actualServiceFee) -
+  //               Number(consumableAmounts.actualVatFee),
+  //             totalWalletConsumableAmount:
+  //               consumableAmounts?.totalWalletConsumableAmount,
+  //             rewardConsumable: consumableAmounts.rewardConsumableAmount,
+  //             walletConsumable: consumableAmounts.walletConsumableAmount,
+  //             vatAmount: getFormattedPrice(
+  //               consumableAmounts?.actualVatFee > 0
+  //                 ? consumableAmounts?.actualVatFee
+  //                 : 0
+  //             ),
+  //             isWithVat: ordersToPass?.withVat,
+  //             discountpercent: ordersToPass?.discountPercent,
+  //             discountAmount: consumableAmounts.finalDiscountAmount,
+  //             remainingAmount:
+  //               Number(ordersToPass?.orderPrice) -
+  //               Number(ordersToPass?.userAmount),
+  //             isOnlyWalletAmountPayment:
+  //               consumableAmounts.cardConsumableAmount == 0 &&
+  //               consumableAmounts.totalWalletConsumableAmount > 0
+  //                 ? true
+  //                 : false,
+  //             additionalAmount: getFormattedPrice(
+  //               consumableAmounts.additionalAmount
+  //             ),
+  //           },
+  //         });
+  //       }
+  //     }
+  //   } catch (error) {
+  //     toast.error("Something went wrong while processing payment.");
+  //   }
+  // };
+
+  const getCardLogo = (brand) => {
+    const brandLower = brand?.toLowerCase();
+    const iconSize = 24; // Adjust size as needed
+
+    switch (brandLower) {
+      case "visa":
+        return <FaCcVisa size={iconSize} className="text-blue-900" />;
+      case "mastercard":
+        return <FaCcMastercard size={iconSize} className="text-red-600" />;
+      case "amex":
+        return <FaCcAmex size={iconSize} className="text-blue-500" />;
+      case "discover":
+        return <FaCcDiscover size={iconSize} className="text-orange-600" />;
+      default:
+        return <FaCreditCard size={iconSize} className="text-gray-500" />;
+    }
+  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) return;
+
+    const cardNumberElement = elements.getElement(CardNumberElement);
+    if (!cardNumberElement) {
+      toast.error("Card input is not ready yet.");
+      return;
+    }
+
+    const { error: stripeError, paymentMethod } = await stripe.createPaymentMethod({
+      type: "card",
+      card: cardNumberElement,
+    });
+
+    if (stripeError) {
+      toast.error(stripeError.message);
+      return;
+    }
+
+    try {
+      const res = await addCard({
+        clientId: user?.userid,
+        cardType: paymentMethod?.card?.brand,
+        Lastfourdigit: paymentMethod?.card?.last4,
+        Stripekey: paymentMethod?.id,
+      });
+
+      const { data: respData, error: apiError } = res;
+
+      if (apiError) {
+        toast.error(apiError?.data?.message || "Error while adding card");
+        return false;
+      }
+
+      if (respData?.result === "Client Card Detail Added Successfully") {
+        toast.success("Card added successfully");
+        setAddCardModal(false);
+        return true;
+      } else {
+        toast.error("Error while adding card");
+        return false;
+      }
+
+    } catch (err) {
+      toast.error("Unexpected error occurred");
+      console.error("Card submission error:", err);
+      return false;
+    }
+  };
+
+
+  const stripeInputStyle = {
+    style: {
+      base: {
+        fontSize: "16px",
+        color: "#424770",
+        "::placeholder": {
+          color: "#aab7c4",
+        },
+      },
+      invalid: {
+        color: "#9e2146",
+      },
+    },
+  };
   if (summaryTab === "summary") {
     return (
-      <div className="mt-20">
-        <button
-          onClick={() => setSummaryTab(null)}
-          className="flex my-4 items-center gap-2 hover:text-[#312E81]"
-        >
-          <FaArrowLeftLong /> Back
-        </button>
-        <div className="grid md:grid-cols-12 justify-items-center gap-8 items-center">
-          <div className="w-full md:col-span-5">
+      <div className="mt-20 !w-full relative">
+        <div className="flex justify-between items-center py-2">
+          <button
+            onClick={() => setSummaryTab(null)}
+            className="flex my-4 items-center gap-2 hover:text-[#312E81]"
+          >
+            <FaArrowLeftLong /> Back
+          </button>
+          <div
+            onClick={handleViewModal}
+            className="flex items-center gap-3 py-3 cursor-pointer hover:bg-gray-200 p-2 rounded-lg transition"
+          >
+            <div className="rounded-full border border-blue-600 w-7 h-7 text-blue-600 flex justify-center items-center font-bold">
+              +
+            </div>
+            <span className="text-gray-700 font-medium">
+              Add New Debit Card
+            </span>
+          </div>
+        </div>
+
+        <div className="grid !w-full lg:grid-cols-2 justify-items-center gap-8 items-center">
+          <div className="w-full">
             <div className="border-2 p-5 rounded-xl h-64">
               <div className="flex items-center gap-2">
                 <FaRegCreditCard size={40} className="text-primary" />
@@ -109,7 +598,7 @@ const OrderDetail = ({ params }) => {
                 <div className="flex justify-between items-center">
                   <span className="text-primary font-bold">Price :</span>
                   <span className="text-primary font-bold">
-                    {order.totalPrice}
+                    {order.balanceamount}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -124,21 +613,24 @@ const OrderDetail = ({ params }) => {
                   <span className="text-primary font-bold line-through">
                     Vat Fee (20%) :
                   </span>
-                  <span className="text-primary font-bold line-through">
-                    {vatFee}
+                  <span className="text-primary font-bold">
+                    {walletAmount?.currency} {vatChargeFee}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-primary font-bold">
                     Total Payable Amount:
                   </span>
-                  <span className="text-primary font-bold">{totalAmount}</span>
+                  <span className="text-primary font-bold">
+                    {walletAmount?.currency}{" "}
+                    {order?.balanceamount + processingFee + vatChargeFee}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="w-full md:col-span-5">
+          <div className="w-full">
             <div className="border-2 rounded-xl p-5 h-64">
               <div className="flex items-center gap-3">
                 <MdPayment size={43} className="text-primary" />
@@ -187,11 +679,138 @@ const OrderDetail = ({ params }) => {
               </div>
             </div>
           </div>
-          <div className="w-full text-center md:col-span-12">
-            <button className="px-12 py-2 md:me-24 rounded-lg bg-primary text-white">
-              Pay $21
+        </div>
+        <div className="py-3">
+          {addCardModal && (
+            <>
+              <div className="w-full h-full fixed inset-0 bg-black opacity-30" />
+              <div className="absolute !top-12 left-1/2 transform -translate-x-1/2 shadow-xl rounded-md backdrop-blur-md bg-white p-6 w-96 md:max-w-screen-md">
+                <h2 className="text-lg font-semibold text-gray-700 mb-4">
+                  Add New Card
+                </h2>
+                <form
+                  onSubmit={handleSubmit}
+                  className="space-y-4 w-full max-w-md mx-auto"
+                >
+                  {/* Card Number */}
+                  <label className="block text-sm font-medium">
+                    Card Number
+                  </label>
+                  <div className="border p-2 rounded-md">
+                    <CardNumberElement options={stripeInputStyle} />
+                  </div>
+
+                  {/* Expiry Date */}
+                  <label className="block text-sm font-medium">Expiry</label>
+                  <div className="border p-2 rounded-md">
+                    <CardExpiryElement options={stripeInputStyle} />
+                  </div>
+
+                  {/* CVC */}
+                  <label className="block text-sm font-medium">CVC</label>
+                  <div className="border p-2 rounded-md">
+                    <CardCvcElement options={stripeInputStyle} />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="bg-primary text-white w-full py-2 rounded-md mt-4"
+                    disabled={!stripe}
+                  >
+                    Add Card
+                  </button>
+                </form>
+              </div>
+            </>
+          )}
+          
+
+          <div className="w-full text-center">
+            <button
+              onClick={handlePayment}
+              className="px-12 py-2 md:me-24 rounded-lg bg-primary text-white"
+            >
+              Pay {walletAmount?.currency}{" "}
+              {order?.balanceamount + processingFee + vatChargeFee}
             </button>
           </div>
+
+          {getAllCards && getAllCards?.length > 0 && (
+            <div className="md:col-span-12 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800">
+                Select Payment Method
+              </h3>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                {getAllCards?.map((card) => {
+                  const isSelected = selectedCardId?.id === card?.id;
+                  const cardLogo = getCardLogo(card.brand); // You would need to implement this function
+
+                  return (
+                    <div
+                      key={card.id}
+                      className={`relative bg-white rounded-xl p-5 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${
+                        isSelected
+                          ? "border-2 border-blue-500 ring-4 ring-blue-100 bg-blue-50"
+                          : "border border-gray-200 hover:border-gray-300"
+                      }`}
+                      onClick={() => handleCardSelect(card)}
+                    >
+                      {/* Card Header */}
+                      <div className="flex justify-between items-start mb-4">
+                        <span className="font-medium text-xs uppercase tracking-wide text-gray-500">
+                          {card?.cardtype}
+                        </span>
+                        {cardLogo}
+                      </div>
+
+                      {/* Card Number */}
+                      <div className="mb-5">
+                        <div className="flex items-center space-x-2">
+                          {[...Array(3)].map((_, i) => (
+                            <span key={i} className="text-xl">
+                              •
+                            </span>
+                          ))}
+                          <span className="text-lg font-medium text-gray-800">
+                            {card?.fourdigit}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Card Footer */}
+                      <div className="flex justify-between items-center">
+                        <div className="text-sm text-gray-600">
+                          <span className="block text-xs text-gray-400">
+                            Expires
+                          </span>
+                          {card.exp_month}/{card.exp_year}
+                        </div>
+
+                        {isSelected && (
+                          <div className="absolute top-3 right-3">
+                            <div className="bg-blue-500 text-white rounded-full p-1">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -203,13 +822,6 @@ const OrderDetail = ({ params }) => {
   //   }
   // }, [getAllOrders])
 
-  const shared = useSelector((state) => state?.shared || {});
-  const { serviceChargePercentage, vatFeePercentage } = shared;
-  const serviceChargeFee = serviceChargePercentage;
- const vatChargeFee = (order?.balanceamount * 20) / 100;
- const processingFee = (order?.balanceamount * 4) / 100;
-
-    
   return (
     <>
       {/* Display Checkout Page if showCheckout is true */}
@@ -286,7 +898,9 @@ const OrderDetail = ({ params }) => {
                           <h1>Order Summary</h1>
                           <div className="flex gap-6 mt-5 items-center">
                             <p className="text-sm text-grey">Price :</p>
-                            <p className="text-grey">{order?.balanceamount}</p>
+                            <p className="text-grey">
+                              {walletAmount?.currency} {order?.balanceamount}
+                            </p>
                           </div>
                           <div className="flex gap-6 mt-2 items-center">
                             <p className="text-sm text-grey">
@@ -304,7 +918,12 @@ const OrderDetail = ({ params }) => {
                           </div>
                           <div className="flex justify-end font-bold gap-6 mt-2 items-center">
                             <p className="text-primary">Payable Amount:</p>
-                            <p className="text-primary">{order.totalPrice}</p>
+                            <p className="text-primary">
+                              {walletAmount?.currency}{" "}
+                              {order?.balanceamount +
+                                processingFee +
+                                vatChargeFee}
+                            </p>
                           </div>
                         </div>
                         <div className="text-center">
@@ -333,17 +952,23 @@ const OrderDetail = ({ params }) => {
                             <h1>Order Summary</h1>
                             <div className="flex gap-6 mt-5 items-center">
                               <p className="text-sm text-grey">Price :</p>
-                              <p className="text-grey">{order.totalPrice}</p>
+                              <p className="text-grey">
+                                {order?.balanceamount}
+                              </p>
                             </div>
                             <div className="flex gap-6 mt-2 items-center">
                               <p className="text-sm text-grey">
                                 Processing Fee (4%) :
                               </p>
-                              <p className="text-grey">${processingFee}</p>
+                              <p className="text-grey">
+                                {walletAmount?.currency} {processingFee}
+                              </p>
                             </div>
                             <div className="flex gap-6 mt-2 items-center">
                               <p className="text-sm text-grey">VAT (20%) :</p>
-                              <p className="text-grey">${vatFee}</p>
+                              <p className="text-grey">
+                                {walletAmount?.currency} {vatChargeFee}
+                              </p>
                             </div>
                             <div className="flex gap-6 mt-2 items-center">
                               <p className="text-sm text-grey">
@@ -353,7 +978,12 @@ const OrderDetail = ({ params }) => {
                             </div>
                             <div className="flex justify-end font-bold gap-6 mt-2 items-center">
                               <p className="text-primary">Payable Amount:</p>
-                              <p className="text-primary">{totalAmount}</p>
+                              <p className="text-primary">
+                                {walletAmount?.currency}{" "}
+                                {order?.balanceamount +
+                                  processingFee +
+                                  vatChargeFee}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -424,13 +1054,23 @@ const OrderDetail = ({ params }) => {
                           <span className="text-sm text-gray-600">
                             Reward Amount:
                           </span>
-                          <span className="text-sm text-gray-600">$ {walletAmount?.rewardsamount ? Number(walletAmount?.rewardsamount).toFixed(2) : "2.3"}</span>
+                          <span className="text-sm text-gray-600">
+                            ${" "}
+                            {walletAmount?.rewardsamount
+                              ? Number(walletAmount?.rewardsamount).toFixed(2)
+                              : "2.3"}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-gray-600">
                             Wallet Amount:
                           </span>
-                          <span className="text-sm text-gray-600">$ {walletAmount?.amount ? Number(walletAmount?.amount).toFixed(2) : "0:00"}</span>
+                          <span className="text-sm text-gray-600">
+                            ${" "}
+                            {walletAmount?.amount
+                              ? Number(walletAmount?.amount).toFixed(2)
+                              : "0:00"}
+                          </span>
                         </div>
                       </div>
                       <div>
@@ -482,7 +1122,9 @@ const OrderDetail = ({ params }) => {
                           <span className="text-grey text-sm">
                             Processing fee (4%):
                           </span>
-                          <span className="text-grey text-sm">$ {processingFee}</span>
+                          <span className="text-grey text-sm">
+                            $ {processingFee}
+                          </span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm line-through">
@@ -546,22 +1188,29 @@ const OrderDetail = ({ params }) => {
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm">Price:</span>
                           <span className="text-grey text-sm">
-                            {order?.balanceamount}
+                            {walletAmount?.currency} {order?.balanceamount}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm">
                             Processing fee (4%):
                           </span>
-                          <span className="text-grey text-sm">$ {processingFee}</span>
+                          <span className="text-grey text-sm">
+                            {walletAmount?.currency} {processingFee}
+                          </span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm">VAT (20%):</span>
-                          <span className="text-grey text-sm">${vatChargeFee}</span>
+                          <span className="text-grey text-sm">
+                            {walletAmount?.currency} {vatChargeFee}
+                          </span>
                         </div>
                         <div className="text-end mt-3">
                           <span className="text-lg text-primary">
-                            Total : {order?.balanceamount + processingFee + vatChargeFee}
+                            Total : {walletAmount?.currency}{" "}
+                            {order?.balanceamount +
+                              processingFee +
+                              vatChargeFee}
                           </span>
                         </div>
                       </div>
@@ -652,7 +1301,13 @@ const OrderDetail = ({ params }) => {
                                 strokeLinecap="round"
                               ></circle>
                             </svg>
-                            <div className={`absolute top-1/2 ${order?.payment_status === 2 ? "!right-16" : "!right-14"} md:right-10 transform -translate-y-1/2 -translate-x-1/2`}>
+                            <div
+                              className={`absolute top-1/2 ${
+                                order?.payment_status === 2
+                                  ? "!right-16"
+                                  : "!right-14"
+                              } md:right-10 transform -translate-y-1/2 -translate-x-1/2`}
+                            >
                               <span className="text-center text-2xl font-bold text-black dark:text-blue-500">
                                 {order?.payment_status === 2
                                   ? 50

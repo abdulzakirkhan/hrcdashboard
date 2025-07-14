@@ -974,7 +974,7 @@ export {
   calculatePaymentVatFees,
   formatSeconds,
   generatePSTISOString,
-  getAppLogo,
+  // getAppLogo,
   getColor,
   getConsumableAmounts,
   getCountryNameFromPhone,

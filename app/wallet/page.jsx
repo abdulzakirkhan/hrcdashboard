@@ -218,7 +218,7 @@ const page = () => {
   }
 
 
-  // console.log("selectedcardId", selectedCardId);
+  console.log("getAllCards", getAllCards);
   return (
     <>
       <section className="mt-20">

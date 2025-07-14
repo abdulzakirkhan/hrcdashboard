@@ -18,8 +18,8 @@ export const paymentApi = api.injectEndpoints({
     addCard: builder.mutation({
       query: (body) => {
         const formData = new FormData();
-        formData.append('clientid', body?.clientid);
-        formData.append('cardtype', body?.cardtype);
+        formData.append('clientid', body?.clientId);
+        formData.append('cardtype', body?.cardType);
         formData.append('Lastfourdigit', body?.Lastfourdigit);
         formData.append('Stripekey', body?.Stripekey);
         return {
