@@ -80,7 +80,7 @@ const OrdersPage = () => {
     };
   }, []);
   // console.log("filteredOrders", filteredOrders);
-//  console.log("user",user) 
+ console.log("orders",getAllOrders) 
   return (
     <>
       <section className="mt-12">
