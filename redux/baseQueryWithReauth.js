@@ -1,17 +1,20 @@
 
 // src/redux/baseQueryWithReauth.js
 import { fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { logOut, setCredentials } from './auth/authSlice';
+// import { logOut, setCredentials } from './auth/authSlice';
 import { BASE_URL } from '@/constants/apiUrls';
+import { ChangeUser, logOut } from './auth/authSlice';
 
 export const baseQueryWithReauth = async (args, api, extraOptions) => {
   const baseQuery = fetchBaseQuery({
     baseUrl: BASE_URL,
     prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.token;
-      console.log("Token in baseQueryWithReauth:", getState()?.auth);
+      // console.log("APi Call")
+
+      const token = getState().auth.user?.token;
+      // console.log("Token in baseQueryWithReauth:", getState().auth?.user?.token);
       if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+        headers.set('Authorization', `${token}`);
       }
       return headers;
     },
@@ -40,7 +43,7 @@ export const baseQueryWithReauth = async (args, api, extraOptions) => {
 
         // Store the new tokens
         api.dispatch(
-          setCredentials({
+          ChangeUser({
             user: formattedEmployee,
             token: accessToken,
             refreshToken: newRefreshToken,

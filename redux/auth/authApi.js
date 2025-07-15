@@ -2,6 +2,7 @@
 // src/redux/auth/authApi.js
 import { api } from '../service';
 import { SIGN_IN_USER } from '../../constants/apiUrls';
+import { baseUrl } from '@/config';
 
 export const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
@@ -60,7 +61,7 @@ export const authApi = api.injectEndpoints({
         formData.append('email', 'muhammad.saad@egeeks.org');
         formData.append('pass', '1234');
         return {
-          url: `${removeAdminFromURL(baseUrl)}/API_NEW/api/v1/generateToken`,
+          url: `${baseUrl}/API_NEW/api/v1/generateToken`,
           method: 'POST',
           body: formData,
         };

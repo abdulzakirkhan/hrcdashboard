@@ -76,6 +76,11 @@ export default function SignInPage() {
       toast.error(error || "error");
     }
   };
+
+  //   useEffect(() => {
+  //   if (getToken?.result?.token)
+  //     dispatch(ChangeUser({ ...user, token: getToken?.result?.token }));
+  // }, [getToken]);
   return (
     <>
       <section className="bg-[#FFFFFF]">

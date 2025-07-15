@@ -19,6 +19,7 @@ import {
 } from './constants';
 import { appNameCode } from './index';
 import { COUNTRY_DETAILS, DSS_DEFAULT_COUNTRY } from '@/lib/inputs/constants';
+import store from '@/redux/store';
 
 const getSizeFromPercentage = (percentage, totalSize) => {
   if (percentage && totalSize) return (percentage * totalSize) / 100;
@@ -179,7 +180,7 @@ const getConsumableAmounts = (
   let cardConsumableAmount = 0;
   let additionalAmount = 0;
 
-  let minimumCardAmount = store?.getState()?.shared.minimumCardAmount ?? 0.6;
+  let minimumCardAmount = store?.getState()?.shared?.minimumCardAmount ?? 0.6;
 
   // First, consume from rewards (high priority)
   rewardConsumableAmount = Math.min(rewardAmount, orderAmount);

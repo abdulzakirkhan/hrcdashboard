@@ -17,6 +17,9 @@ import { useGetStandardValuesQuery } from "@/redux/shared/sharedApi";
 import { ORDERS_TYPES } from "@/config/constants";
 import { getOrderTypeValues } from "@/config/myWebHelpers";
 import { useGetProfileQuery } from "@/redux/user/profileApi";
+import { useGetTokenQuery } from "@/redux/auth/authApi";
+import { useDispatch } from "react-redux";
+import { ChangeUser } from "@/redux/auth/authSlice";
 
 const DashboardPage = () => {
   const orderType = ORDERS_TYPES.ALL_ORDERS;
@@ -132,6 +135,19 @@ const DashboardPage = () => {
     )
       setAllOrders(getAllOrders?.result?.orderAll);
   }, [getAllOrders]);
+  
+
+  const { data: getToken = { result: {} } } = useGetTokenQuery();
+  const dispatch = useDispatch()
+
+    useEffect(() => {
+    if (getToken?.result?.token)
+      dispatch(ChangeUser({ ...user, token: getToken?.result?.token }));
+  }, [getToken]);
+
+
+
+  // console.log("user",user)
   
   return (
     <section className={`mt-20`}>

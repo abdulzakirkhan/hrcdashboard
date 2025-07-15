@@ -95,6 +95,7 @@ import Sidebar from "@/components/SideNav";
 import Header from "@/components/Header";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+import { Toaster } from "react-hot-toast";
 
 const stripePromise = loadStripe("pk_test_51NkKxCIDvqClqRenONst52QWoDYzp6xIDzhQPvomHMA0cyMgrXEMuRdTDUMMMOqu5wraiYxVXA73XZIerEU0eECU00HnhGvGpe"); 
 // Create persistor only once
@@ -108,6 +109,7 @@ export default function RootLayout({ children }) {
             <PersistGate loading={null} persistor={persistor}>
               <Elements stripe={stripePromise}>
                 <AppLayout>{children}</AppLayout>
+                <Toaster position="top-right" reverseOrder={false} />
               </Elements>
             </PersistGate>
           </Provider>

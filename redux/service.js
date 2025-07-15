@@ -1,8 +1,8 @@
-import { BASE_URL } from '@/constants/apiUrls';
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-// import { baseUrl } from '@config/index';
+import { createApi } from '@reduxjs/toolkit/query/react';
+import { baseQueryWithReauth } from './baseQueryWithReauth'; // ✅ Correct import
 
 export const api = createApi({
+  reducerPath: 'api',
   tagTypes: [
     'PaymentCards',
     'Payment',
@@ -18,17 +18,7 @@ export const api = createApi({
     'Notification',
     'ChatCount',
   ],
-
-  baseQuery: fetchBaseQuery({
-    baseUrl:BASE_URL,
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.user?.token;
-
-      if (token) headers.set('Authorization', `${token}`);
-
-      return headers;
-    },
-  }),
-  refetchOnReconnect:true,
+  baseQuery: baseQueryWithReauth, // ✅ Use directly — no parentheses
+  refetchOnReconnect: true,
   endpoints: () => ({}),
 });

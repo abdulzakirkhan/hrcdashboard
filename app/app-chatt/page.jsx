@@ -5,14 +5,18 @@ import {
   useInsertClientMesageThroughAppMutation,
   useSeenAllMessagesMutation,
 } from "@/redux/chat/chatApi";
+
 import { useGetUserCurrencyAndCountryQuery } from "@/redux/order/ordersApi";
 import pusher from "@/utils/pusher";
 import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { FaPaperclip, FaMicrophone, FaTelegramPlane } from "react-icons/fa"; // Import icons
+import { FaPaperclip, FaMicrophone, FaTelegramPlane, FaFileAudio } from "react-icons/fa"; // Import icons
 import { useSelector } from "react-redux";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
+import voiceButtonAnimation  from "../../constants/voiceButtonAnimation.json"
+import Lottie from "lottie-react";
+import { AiOutlineAudio } from "react-icons/ai";
 const ChatPage = () => {
   const dummyData = [
     {
@@ -68,8 +72,10 @@ const ChatPage = () => {
   const [allchats, setAllChats] = useState();
   const [realTimeMessages, setRealTimeMessages] = useState([]);
   const [sudoName, setSudoName] = useState("Customer Support");
-
-
+  const [isVoiceStart, setIsVoiceStart] = useState(false)
+  const [recordedBlob, setRecordedBlob] = useState(null);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
 
   // Sort by date first, then time (ascending = oldest to newest)
   const sortedMessages = [...messages].sort((a, b) => {
@@ -152,20 +158,26 @@ const ChatPage = () => {
     setCurrentItemIndex(0);
     setCurrentSectionIndex(0);
     const body = new FormData();
-
     body.append("clientid", user?.userid);
 
-    if(payloadImages.length > 0){
+    // if(recordedBlob){
+    //   console.log("voiceMessage",recordedBlob)
+    //   body.append('filemsg',recordedBlob);
+    // }
+    if(payloadImages?.length > 0){
       payloadImages.forEach((file) => {
         body.append("filemsg[]", file);
       });
+    }else if(recordedBlob){
+      body.append('filemsg',recordedBlob);
     }else{
       body.append("msg", message.trim());
       body.append("currency", userCurrencyToSend);
     }
 
     // stoping api call
-    for (let [key, value] of body.entries()) {
+    for (let [key, value
+    ] of body.entries()) {
       console.log(`${key}:`, value);
     }
 
@@ -212,6 +224,8 @@ const ChatPage = () => {
       // console.log("📨 New message received:", eventName, data);
       let message = data.message;
 
+      // console.log("message",message)
+      // return
       // let msg = message.msg;
       let msgfrom = message?.msgfrom;
       let responseTo = message?.respondTo;
@@ -271,6 +285,40 @@ const ChatPage = () => {
   }, []);
 
   // console.log("getAllChats:", getAllChats);
+
+  const handleVoiceRecording = async () => {
+    if (!isVoiceStart) {
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        chunksRef.current = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            chunksRef.current.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+          setRecordedBlob(blob);
+        };
+
+        mediaRecorder.start();
+        mediaRecorderRef.current = mediaRecorder;
+        setIsVoiceStart(true);
+      } catch (err) {
+        console.error("Microphone access denied or error", err);
+      }
+    } else {
+      // Stop recording
+      mediaRecorderRef.current?.stop();
+      setIsVoiceStart(false);
+    }
+  };
+  // console.log("recordedBlog",recordedBlob)
+
   return (
     <>
       <section className="mt-20">
@@ -370,8 +418,8 @@ const ChatPage = () => {
               placeholder="Type a message..."
               className="w-1/2 md:w-[73%] p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <button className="bg-primary py-2 px-3 rounded-lg text-white">
-              <FaMicrophone className="text-2xl cursor-pointer" />
+            <button className="bg-primary py-2 px-3 rounded-lg text-white" onClick={handleVoiceRecording}>
+              {isVoiceStart ? <Lottie animationData={voiceButtonAnimation} loop={true} style={{width:"30px",height:"30px"}} /> : recordedBlob ? <FaFileAudio  /> : <FaMicrophone className="text-2xl cursor-pointer" />}
             </button>
             <button
               className="bg-primary flex items-center gap-2 px-6 py-2 rounded-lg text-white"

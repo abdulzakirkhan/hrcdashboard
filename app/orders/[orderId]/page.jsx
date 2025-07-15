@@ -20,22 +20,27 @@ import { motion } from "framer-motion";
 import { FaWallet } from "react-icons/fa";
 import { MdPayment } from "react-icons/md";
 import { useSelector } from "react-redux";
-import { ORDERS_TYPES } from "@/constants";
+import { ORDERS_TYPES, PAYMENT_ERROR } from "@/constants";
 import { getOrderTypeValues } from "@/config/myWebHelpers";
 import {
   useGetOrderByPaymentTypeQuery,
   useGetUserCurrencyAndCountryQuery,
 } from "@/redux/order/ordersApi";
 import {
+  calculatePaymentFees,
+  getConsumableAmounts,
   getCurrency,
   getCurrencyNameFromPhone,
+  getFormattedPriceWith3,
   getIntOrderConsumableAmnts,
 } from "@/config/helpers";
 import {
   useAddCardMutation,
   useGetAllCardsQuery,
+  useGetWalletAllCardsQuery,
   useGetWalletAmountQuery,
   useInitateOrderPaymentMutation,
+  useMakePaymentMutation,
   useTipToWriterPayemntMutation,
 } from "@/redux/payments/paymentApi";
 import toast from "react-hot-toast";
@@ -98,11 +103,14 @@ const OrderDetail = ({ params }) => {
     setShowCheckout(true);
     setSummaryTab(true);
   };
+  const [selectedCardId, setSelectedCardId] = useState(null);
 
   const handleCardSelect = (card) => {
     setSelectedCard(card);
   };
-
+  const handleCardSelectStp = (card) =>{
+    setSelectedCardId(card)
+  }
   const handleTabSwitch = (tab, mode) => {
     setActiveTab(tab);
     handleCardSelect(mode);
@@ -112,13 +120,23 @@ const OrderDetail = ({ params }) => {
   const serviceChargeFee = serviceChargePercentage;
   const vatChargeFee = (order?.balanceamount * 20) / 100;
   const processingFee = (order?.balanceamount * 4) / 100;
-  const [selectedCardId, setSelectedCardId] = useState(null);
   const totalAmount = Number(amount) + processingFee + vatChargeFee; // Total amount including all feeses
   const [addCardModal, setAddCardModal] = useState(false);
   const stripe = useStripe();
   const elements = useElements();
   const [tipToWriterPayment, { isLoading: tipToWriterPaymentLoading }] =
     useTipToWriterPayemntMutation();
+
+      const [makePayment, { isLoading: makePaymentLoading }] =
+    useMakePaymentMutation();
+
+
+    const total=order?.balanceamount
+      const consumableObj = getConsumableAmounts(
+    setIsChecked ? walletAmount?.amount : 0,
+    setIsChecked ? walletAmount?.rewardsamount : 0,
+    total
+  );
 
   const handleViewModal = () => {
     setAddCardModal(!addCardModal);
@@ -131,7 +149,12 @@ const OrderDetail = ({ params }) => {
   const {
     data: getAllCards = { result: { result: {} } },
     isLoading: allCardsLoading,
-  } = useGetAllCardsQuery(user?.userid);
+    refetch: allCardsRefech,
+  } = useGetWalletAllCardsQuery(user?.userid);
+
+
+  const cardConsumableAmount = consumableObj.cardConsumableAmount;
+   const acutalServiceFee = calculatePaymentFees(cardConsumableAmount);
 
   const handleAddCard = async (cardData) => {
     try {
@@ -170,312 +193,135 @@ const OrderDetail = ({ params }) => {
       return false;
     }
   };
+  console.log("selected",order)
+
+
+
+  // capture data as an image
+  const generateSummaryImage = (data) => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Set canvas size
+    canvas.width = 600;
+    canvas.height = 400;
+
+    // Set background and text styles
+    ctx.fillStyle = '#ffffff'; // White background
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#000000'; // Black text
+    ctx.font = '20px Arial';
+
+    // Draw text lines
+    let y = 40;
+    ctx.fillText('📋 Payment Summary', 20, y);
+
+    y += 40;
+    ctx.fillText(`Order ID: ${data.orderid}`, 20, y);
+
+    y += 30;
+    ctx.fillText(`Amount: ${data.amount} ${data.currency}`, 20, y);
+
+    y += 30;
+    ctx.fillText(`Service Charges: ${data.serviceCharges}`, 20, y);
+
+    y += 30;
+    ctx.fillText(`Reward Amount: ${data.rewardamount}`, 20, y);
+
+    y += 30;
+    ctx.fillText(`Wallet Amount: ${data.walletamount}`, 20, y);
+
+    y += 30;
+    ctx.fillText(`VAT: ${data.vat}`, 20, y);
+
+    y += 30;
+    ctx.fillText(`Additional Amount: ${data.additionalAmount}`, 20, y);
+
+    // Convert to blob
+    canvas.toBlob((blob) => {
+      resolve(blob);
+    }, 'image/png');
+  });
+};
 
   const handlePayment = async () => {
-    console.log("cliked");
+    try {
+      // const selectedCard = selectedCardId?.id;
+
+      const stripToken = selectedCardId?.stripekey ? selectedCardId?.stripekey : getAllCards[0]?.stripekey;
+
+      let totalAmount = 0;
+
+      let orderIds = [];
+      let orders = [];
+      orders?.forEach((order) => {
+        totalAmount = totalAmount + Number(order.price);
+        orderIds?.push(order?.order_id);
+      });
+
+      const formData = new FormData();
+      // stripe payment form
+      formData.append("token", stripToken);
+      formData.append("currency", getCurrency(order?.currency));
+      formData.append("amount", getFormattedPriceWith3(cardConsumableAmount));
+      formData.append(
+        "serviceCharges",
+        getFormattedPriceWith3(acutalServiceFee)
+      );
+      formData.append("orderid", order?.id);
+      formData.append(
+        "rewardamount",
+        getFormattedPriceWith3(consumableObj.rewardConsumableAmount)
+      );
+      formData.append(
+        "walletamount",
+        getFormattedPriceWith3(consumableObj.walletConsumableAmount)
+      );
+      formData.append("vat", getFormattedPriceWith3(actualVatFee));
+      formData.append(
+        "additionalAmount",
+        getFormattedPriceWith3(consumableObj.additionalAmount)
+      );
+      const payload = {
+        token: stripToken,
+        currency: getCurrency(order?.currency),
+        amount: getFormattedPriceWith3(cardConsumableAmount),
+        serviceCharges: getFormattedPriceWith3(acutalServiceFee),
+        orderid: order?.id,
+        rewardamount: getFormattedPriceWith3(consumableObj.rewardConsumableAmount),
+        walletamount: getFormattedPriceWith3(consumableObj.walletConsumableAmount),
+        vat: getFormattedPriceWith3(actualVatFee),
+        additionalAmount: getFormattedPriceWith3(consumableObj.additionalAmount),
+      };
+
+      const summaryImageBlob = await generateSummaryImage(payload);
+
+      console.log("summaryImageBlob :",summaryImageBlob)
+      return;
+      if (summaryImageBlob) {
+        formData.append('screenshot', summaryImageBlob, summaryImageBlob);
+      }
+
+      const res = await makePayment(formData);
+
+      const { data: respData, error } = res || {};
+
+      if (respData) {
+          if (respData?.result == 'Successfully Paid') {
+            toast.success("Successfully Paid")
+          } else if (respData?.result == PAYMENT_ERROR) {
+            toast.error(respData?.result || PAYMENT_ERROR)
+          } else{
+            toast.error(respData?.result)
+          }
+        }
+        if (error){
+          toast.error("Something Went Wrong.")
+        }
+    } catch (error) {}
   };
-  console.log("user : ", user);
-
-  // const handlePaymentsss = async () => {
-  //   try {
-  //     const selectedCard = allCards?.find((card) => card?.id == selectedId);
-  //     const stripToken = !selectedId
-  //       ? allCards?.[0]?.stripekey
-  //       : selectedCard?.stripekey;
-
-  //     if (ordersToPass?.withVat) {
-  //       const formData = new FormData();
-
-  //       formData.append("token", stripToken);
-  //       formData.append("currency", ordersToPass?.currency);
-  //       formData.append(
-  //         "price",
-  //         getFormattedPriceWith3(
-  //           Number(ordersToPass?.orderPrice) + Number(AddOnTotal)
-  //         )
-  //       );
-  //       formData.append(
-  //         "useramount",
-  //         ordersToPass?.userAmount
-  //           ? getFormattedPriceWith3(Number(ordersToPass?.userAmount))
-  //           : getFormattedPriceWith3(
-  //               Number(ordersToPass?.orderPrice) + Number(AddOnTotal)
-  //             )
-  //       );
-  //       formData.append("clientid", user?.userid);
-  //       formData.append(
-  //         "servicecharges",
-  //         getFormattedPriceWith3(consumableAmounts.actualServiceFee)
-  //       );
-  //       formData.append(
-  //         "deadline",
-  //         ordersToPass?.deadline
-  //           ? DateTime.fromISO(ordersToPass?.deadline).toFormat("yyyy-LL-dd")
-  //           : undefined
-  //       );
-  //       formData.append("category", ordersToPass?.catagery);
-  //       formData.append("desc", ordersToPass?.description);
-  //       formData.append("academiclevel", ordersToPass?.academicLevel);
-  //       formData.append("papertopic", ordersToPass?.paperTopic);
-  //       formData.append("noofpage", ordersToPass?.noOfPages);
-  //       formData.append("country", ordersToPass?.country);
-  //       formData.append("taskdoneby", ordersToPass?.taskdoneby);
-  //       formData.append("typeofpaper", ordersToPass?.typeOfPaper);
-  //       formData.append("itsubjectid", ordersToPass?.itSubject);
-  //       formData.append(
-  //         "rewardamount",
-  //         getFormattedPriceWith3(consumableAmounts.rewardConsumableAmount)
-  //       );
-  //       formData.append(
-  //         "walletamount",
-  //         getFormattedPriceWith3(consumableAmounts.walletConsumableAmount)
-  //       );
-  //       formData.append(
-  //         "vat",
-  //         getFormattedPriceWith3(consumableAmounts.actualVatFee)
-  //       );
-  //       formData.append(
-  //         "discountamount",
-  //         getFormattedPriceWith3(consumableAmounts.finalDiscountAmount)
-  //       );
-  //       formData.append("discountpercentage", ordersToPass?.discountPercent);
-  //       formData.append(
-  //         "discountflag",
-  //         ordersToPass?.discountPercent > 0 ? 1 : 0
-  //       );
-  //       formData.append(
-  //         "viafrom",
-  //         consumableAmounts.cardConsumableAmount > 0 ? "stripe" : "wallet"
-  //       );
-  //       formData.append("notificationid", ordersToPass?.notificationId);
-  //       formData.append("attachment", {
-  //         uri: ordersToPass?.attachment?.uri,
-  //         type: ordersToPass?.attachment?.type,
-  //         name:
-  //           ordersToPass?.attachment?.name ??
-  //           ordersToPass?.attachment?.fileName,
-  //       });
-  //       formData.append("email", ordersToPass?.meetingLoginId);
-  //       formData.append("password", ordersToPass?.meetingLoginpassword);
-  //       formData.append(
-  //         "meeting_date",
-  //         ordersToPass?.meetingDate
-  //           ? DateTime.fromISO(ordersToPass?.meetingDate).toFormat("yyyy-LL-dd")
-  //           : ""
-  //       );
-  //       formData.append("start_time", ordersToPass?.meetingStartTime);
-  //       formData.append("end_time", ordersToPass?.meetingEndTime);
-  //       formData.append("meeting_hours", ordersToPass?.meetingDurationInHours);
-  //       formData.append("createdByBot", ordersToPass?.createdByBot);
-  //       formData.append("addOns", JSON.stringify(addOns));
-  //       formData.append("AddOnTotal", AddOnTotal);
-  //       formData.append("noofwords", ordersToPass?.noOfWords);
-  //       formData.append("order_id", ordersToPass?.postOrderMeetingOrderId);
-  //       formData.append(
-  //         "additionalAmount",
-  //         getFormattedPriceWith3(consumableAmounts.additionalAmount)
-  //       );
-
-  //       if (paymentScreenshot) {
-  //         formData.append("screenshot", {
-  //           uri: paymentScreenshot,
-  //           type: "image/png",
-  //           name: "payment_screen_shot.png",
-  //         });
-  //       }
-
-  //       const res = await createOrder(formData);
-
-  //       const { data: respData, error } = res || {};
-
-  //       if (respData?.result == "Order Placed Successfully") {
-  //         toast.success("Order Placed Successfully");
-
-  //         navigation.pop(1);
-  //         dispatch(changeIsRecurringOrder(false));
-  //         dispatch(changeRecurringOrderDiscount(null));
-  //         navigation.navigate(navigationRoutes.PaymentResult, {
-  //           currencySymbol: getCurrencySymbol(ordersToPass?.currency),
-  //           serviceCharges: getFormattedPrice(
-  //             consumableAmounts.actualServiceFee
-  //           ),
-  //           totalAmount: `${getFormattedPrice(
-  //             Number(consumableAmounts.totalWalletConsumableAmount) +
-  //               Number(consumableAmounts.cardConsumableAmount) -
-  //               Number(consumableAmounts.actualServiceFee) -
-  //               Number(consumableAmounts.actualVatFee)
-  //           )}`,
-  //           customerId: user?.userid,
-  //           customerName: user?.clientname,
-  //           cardConsumableAmount:
-  //             Number(consumableAmounts?.cardConsumableAmount) -
-  //             Number(consumableAmounts.actualServiceFee) -
-  //             Number(consumableAmounts.actualVatFee),
-  //           totalWalletConsumableAmount:
-  //             consumableAmounts?.totalWalletConsumableAmount,
-  //           rewardConsumable: consumableAmounts.rewardConsumableAmount,
-  //           walletConsumable: consumableAmounts.walletConsumableAmount,
-  //           vatAmount: getFormattedPrice(
-  //             consumableAmounts?.actualVatFee > 0
-  //               ? consumableAmounts?.actualVatFee
-  //               : 0
-  //           ),
-  //           isWithVat: ordersToPass?.withVat,
-  //           discountpercent: ordersToPass?.discountPercent,
-  //           discountAmount: consumableAmounts.finalDiscountAmount,
-  //           remainingAmount:
-  //             Number(ordersToPass?.orderPrice) -
-  //             Number(ordersToPass?.userAmount),
-  //           additionalAmount: getFormattedPrice(
-  //             consumableAmounts.additionalAmount
-  //           ),
-  //         });
-  //       } else {
-  //         toast.error("Something went wrong while placing the order.");
-  //       }
-  //     } else {
-  //       const meezanLinkRes = await meezanPaymentLink({
-  //         amount: getFormattedPriceWith3(
-  //           Number(consumableAmounts.cardConsumableAmount) +
-  //             Number(
-  //               percentOfAmount(
-  //                 consumableAmounts.cardConsumableAmount,
-  //                 serviceChargeFee
-  //               )
-  //             )
-  //         ),
-  //         currency: getCurrency(ordersToPass?.currency),
-  //       });
-
-  //       if (
-  //         meezanLinkRes?.data?.link ||
-  //         consumableAmounts.cardConsumableAmount == 0
-  //       ) {
-  //         navigation?.navigate(navigationRoutes.InitiateOrderMeezanGateway, {
-  //           link: meezanLinkRes?.data?.link,
-  //           meezanPaymentData: {
-  //             token: stripToken,
-  //             currency: ordersToPass?.currency,
-  //             price: getFormattedPriceWith3(
-  //               Number(ordersToPass?.orderPrice) + Number(AddOnTotal)
-  //             ),
-  //             userAmount: ordersToPass?.userAmount
-  //               ? getFormattedPriceWith3(
-  //                   Number(ordersToPass?.userAmount) + Number(AddOnTotal)
-  //                 )
-  //               : getFormattedPriceWith3(
-  //                   Number(ordersToPass?.orderPrice) + Number(AddOnTotal)
-  //                 ),
-  //             clientid: user?.userid,
-  //             servicecharges: getFormattedPriceWith3(
-  //               consumableAmounts.actualServiceFee
-  //             ),
-  //             deadline: ordersToPass?.deadline
-  //               ? DateTime.fromISO(ordersToPass?.deadline).toFormat(
-  //                   "yyyy-LL-dd"
-  //                 )
-  //               : undefined,
-  //             category: ordersToPass?.catagery,
-  //             desc: ordersToPass?.description,
-  //             academiclevel: ordersToPass?.academicLevel,
-  //             papertopic: ordersToPass?.paperTopic,
-  //             noofpage: ordersToPass?.noOfPages,
-  //             country: ordersToPass?.country,
-  //             taskdoneby: ordersToPass?.taskdoneby,
-  //             typeofpaper: ordersToPass?.typeOfPaper,
-  //             fitsubjectid: ordersToPass?.itSubject,
-  //             rewardamount: getFormattedPriceWith3(
-  //               consumableAmounts.rewardConsumableAmount
-  //             ),
-  //             walletamount: getFormattedPriceWith3(
-  //               consumableAmounts.walletConsumableAmount
-  //             ),
-  //             vat: getFormattedPriceWith3(consumableAmounts.actualVatFee),
-  //             discountamount: getFormattedPriceWith3(
-  //               consumableAmounts.finalDiscountAmount
-  //             ),
-  //             discountpercentage: ordersToPass?.discountPercent,
-  //             discountflag: ordersToPass?.discountPercent > 0 ? 1 : 0,
-  //             viafrom:
-  //               consumableAmounts.cardConsumableAmount > 0
-  //                 ? "meezan"
-  //                 : "wallet",
-  //             notificationid: ordersToPass?.notificationId,
-  //             attachment: {
-  //               uri: ordersToPass?.attachment?.uri,
-  //               type: ordersToPass?.attachment?.type,
-  //               name:
-  //                 ordersToPass?.attachment?.name ??
-  //                 ordersToPass?.attachment?.fileName,
-  //             },
-  //             meetingLoginId: ordersToPass?.meetingLoginId,
-  //             meetingLoginpassword: ordersToPass?.meetingLoginpassword,
-  //             meetingDate: ordersToPass?.meetingDate
-  //               ? DateTime.fromISO(ordersToPass?.meetingDate).toFormat(
-  //                   "yyyy-LL-dd"
-  //                 )
-  //               : "",
-  //             meetingStartTime: ordersToPass?.meetingStartTime,
-  //             meetingEndTime: ordersToPass?.meetingEndTime,
-  //             createdByBot: ordersToPass?.createdByBot,
-  //             addOns: JSON.stringify(addOns),
-  //             AddOnTotal: AddOnTotal,
-  //             noOfWords: ordersToPass?.noOfWords,
-  //             meetingDurationInHours: ordersToPass?.meetingDurationInHours,
-  //             postOrderMeetingOrderId: ordersToPass?.postOrderMeetingOrderId,
-  //             additionalAmount: consumableAmounts.additionalAmount,
-  //             transactionId: meezanLinkRes?.data?.transactionId,
-  //             myorderid: meezanLinkRes?.data?.transactionId,
-  //           },
-  //           paymentScreenshot,
-  //           recepidData: {
-  //             currencySymbol: getCurrencySymbol(ordersToPass?.currency),
-  //             serviceCharges: getFormattedPrice(
-  //               consumableAmounts.actualServiceFee
-  //             ),
-  //             totalAmount: `${getFormattedPrice(
-  //               Number(consumableAmounts.totalWalletConsumableAmount) +
-  //                 Number(consumableAmounts.cardConsumableAmount) -
-  //                 Number(consumableAmounts.actualServiceFee) -
-  //                 Number(consumableAmounts.actualVatFee)
-  //             )}`,
-  //             customerId: user?.userid,
-  //             customerName: user?.clientname,
-  //             cardConsumableAmount:
-  //               Number(consumableAmounts?.cardConsumableAmount) -
-  //               Number(consumableAmounts.actualServiceFee) -
-  //               Number(consumableAmounts.actualVatFee),
-  //             totalWalletConsumableAmount:
-  //               consumableAmounts?.totalWalletConsumableAmount,
-  //             rewardConsumable: consumableAmounts.rewardConsumableAmount,
-  //             walletConsumable: consumableAmounts.walletConsumableAmount,
-  //             vatAmount: getFormattedPrice(
-  //               consumableAmounts?.actualVatFee > 0
-  //                 ? consumableAmounts?.actualVatFee
-  //                 : 0
-  //             ),
-  //             isWithVat: ordersToPass?.withVat,
-  //             discountpercent: ordersToPass?.discountPercent,
-  //             discountAmount: consumableAmounts.finalDiscountAmount,
-  //             remainingAmount:
-  //               Number(ordersToPass?.orderPrice) -
-  //               Number(ordersToPass?.userAmount),
-  //             isOnlyWalletAmountPayment:
-  //               consumableAmounts.cardConsumableAmount == 0 &&
-  //               consumableAmounts.totalWalletConsumableAmount > 0
-  //                 ? true
-  //                 : false,
-  //             additionalAmount: getFormattedPrice(
-  //               consumableAmounts.additionalAmount
-  //             ),
-  //           },
-  //         });
-  //       }
-  //     }
-  //   } catch (error) {
-  //     toast.error("Something went wrong while processing payment.");
-  //   }
-  // };
 
   const getCardLogo = (brand) => {
     const brandLower = brand?.toLowerCase();
@@ -505,10 +351,11 @@ const OrderDetail = ({ params }) => {
       return;
     }
 
-    const { error: stripeError, paymentMethod } = await stripe.createPaymentMethod({
-      type: "card",
-      card: cardNumberElement,
-    });
+    const { error: stripeError, paymentMethod } =
+      await stripe.createPaymentMethod({
+        type: "card",
+        card: cardNumberElement,
+      });
 
     if (stripeError) {
       toast.error(stripeError.message);
@@ -524,13 +371,13 @@ const OrderDetail = ({ params }) => {
       });
 
       const { data: respData, error: apiError } = res;
-
-      if (apiError) {
-        toast.error(apiError?.data?.message || "Error while adding card");
+      console.log("res", respData);
+      if (respData?.error == true) {
+        toast.error(apiError?.data?.message);
         return false;
       }
 
-      if (respData?.result === "Client Card Detail Added Successfully") {
+      if (respData?.status == 200) {
         toast.success("Card added successfully");
         setAddCardModal(false);
         return true;
@@ -538,14 +385,12 @@ const OrderDetail = ({ params }) => {
         toast.error("Error while adding card");
         return false;
       }
-
     } catch (err) {
       toast.error("Unexpected error occurred");
       console.error("Card submission error:", err);
       return false;
     }
   };
-
 
   const stripeInputStyle = {
     style: {
@@ -723,17 +568,6 @@ const OrderDetail = ({ params }) => {
               </div>
             </>
           )}
-          
-
-          <div className="w-full text-center">
-            <button
-              onClick={handlePayment}
-              className="px-12 py-2 md:me-24 rounded-lg bg-primary text-white"
-            >
-              Pay {walletAmount?.currency}{" "}
-              {order?.balanceamount + processingFee + vatChargeFee}
-            </button>
-          </div>
 
           {getAllCards && getAllCards?.length > 0 && (
             <div className="md:col-span-12 space-y-4">
@@ -753,7 +587,7 @@ const OrderDetail = ({ params }) => {
                           ? "border-2 border-blue-500 ring-4 ring-blue-100 bg-blue-50"
                           : "border border-gray-200 hover:border-gray-300"
                       }`}
-                      onClick={() => handleCardSelect(card)}
+                      onClick={() => handleCardSelectStp(card)}
                     >
                       {/* Card Header */}
                       <div className="flex justify-between items-start mb-4">
@@ -811,6 +645,16 @@ const OrderDetail = ({ params }) => {
               </div>
             </div>
           )}
+
+          <div className="w-full py-2 text-center">
+            <button
+              onClick={handlePayment} disabled={selectedCardId ? false : true}
+              className="px-12 py-2 md:me-24 rounded-lg bg-primary text-white"
+            >
+              Pay {walletAmount?.currency}{" "}
+              {order?.balanceamount + processingFee + vatChargeFee}
+            </button>
+          </div>
         </div>
       </div>
     );

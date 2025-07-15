@@ -45,7 +45,7 @@ const OrdersPage = () => {
   };
   const ordersData = getAllOrders?.result?.orderAll || [];
   const [allOrders, setAllOrders] = useState([])
-  const filteredOrders = getAllOrders?.result?.orderAll.filter((order) => {
+  const filteredOrders = getAllOrders?.result?.orderAll?.filter((order) => {
     const { completed, paid, unpaid, partiallyPaid } = filters;
 
     const statusMatch = !completed || order?.orderstatus === "Completed";
@@ -80,7 +80,7 @@ const OrdersPage = () => {
     };
   }, []);
   // console.log("filteredOrders", filteredOrders);
-
+//  console.log("user",user) 
   return (
     <>
       <section className="mt-12">

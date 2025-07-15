@@ -2,12 +2,14 @@ import { baseUrl } from '@/config';
 import { api } from '../service';
 
 export const paymentApi = api.injectEndpoints({
+  overrideExisting: true,
   endpoints: (builder) => ({
     getAllCards: builder.query({
       query: (clientId) => {
         const formData = new FormData();
         formData.append('clientid', clientId);
         return {
+          // /Apicon/getclientcarddetailof
           url: `/Apicon/getclientcarddetailof`,
           method: 'POST',
           body: formData,
@@ -23,7 +25,7 @@ export const paymentApi = api.injectEndpoints({
         formData.append('Lastfourdigit', body?.Lastfourdigit);
         formData.append('Stripekey', body?.Stripekey);
         return {
-          url: `${baseUrl}/API_NEW/api/v1/addclientcarddeatilss`,
+          url: `/API_NEW/api/v1/addclientcarddeatilss`,
           method: 'POST',
           body: formData,
         };

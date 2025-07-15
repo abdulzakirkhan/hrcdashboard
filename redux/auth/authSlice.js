@@ -22,12 +22,6 @@ const authSlice = createSlice({
           activeRole: UserRole.client,
           ...action.payload,
         };
-      if (action?.payload?.userid) {
-        try {
-          // OneSignal.User.addTag('userId', action?.payload?.userid);
-          console.log("object");
-        } catch (error) {}
-      }
     },
     changeReferralUserId: (state, action) => {
       state.referralUserId = action.payload;
