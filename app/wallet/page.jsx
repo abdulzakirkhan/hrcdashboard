@@ -218,7 +218,6 @@ const page = () => {
   }
 
 
-  console.log("getAllCards", getAllCards);
   return (
     <>
       <section className="mt-20">

@@ -25,7 +25,8 @@ export const paymentApi = api.injectEndpoints({
         formData.append('Lastfourdigit', body?.Lastfourdigit);
         formData.append('Stripekey', body?.Stripekey);
         return {
-          url: `/API_NEW/api/v1/addclientcarddeatilss`,
+          // /API_NEW/api/v1/addclientcarddeatilss
+          url: `/addclientcarddeatilss`,
           method: 'POST',
           body: formData,
         };

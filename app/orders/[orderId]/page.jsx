@@ -28,6 +28,7 @@ import {
 } from "@/redux/order/ordersApi";
 import {
   calculatePaymentFees,
+  calculatePaymentVatFees,
   getConsumableAmounts,
   getCurrency,
   getCurrencyNameFromPhone,
@@ -150,7 +151,7 @@ const OrderDetail = ({ params }) => {
     data: getAllCards = { result: { result: {} } },
     isLoading: allCardsLoading,
     refetch: allCardsRefech,
-  } = useGetWalletAllCardsQuery(user?.userid);
+  } = useGetAllCardsQuery(user?.userid);
 
 
   const cardConsumableAmount = consumableObj.cardConsumableAmount;
@@ -193,7 +194,7 @@ const OrderDetail = ({ params }) => {
       return false;
     }
   };
-  console.log("selected",order)
+  // console.log("selected",order)
 
 
 
@@ -245,83 +246,63 @@ const OrderDetail = ({ params }) => {
     }, 'image/png');
   });
 };
+const actualVatFee = calculatePaymentVatFees(cardConsumableAmount);
 
-  const handlePayment = async () => {
-    try {
-      // const selectedCard = selectedCardId?.id;
+ const handlePayment = async () => {
+   
+   try {
+    console.log("Payment button clicked");
+    const stripToken = selectedCardId?.stripekey || getAllCards?.[0]?.stripekey;
+    
 
-      const stripToken = selectedCardId?.stripekey ? selectedCardId?.stripekey : getAllCards[0]?.stripekey;
+    const payload = {
+      token: stripToken,
+      currency: getCurrency(order?.currency),
+      amount: getFormattedPriceWith3(cardConsumableAmount),
+      serviceCharges: processingFee,
+      orderid: orderId,
+      rewardamount: getFormattedPriceWith3(consumableObj?.rewardConsumableAmount),
+      walletamount: getFormattedPriceWith3(consumableObj?.walletConsumableAmount),
+      vat: vatChargeFee,
+      additionalAmount: getFormattedPriceWith3(consumableObj?.additionalAmount),
+    };
 
-      let totalAmount = 0;
+    const formData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
 
-      let orderIds = [];
-      let orders = [];
-      orders?.forEach((order) => {
-        totalAmount = totalAmount + Number(order.price);
-        orderIds?.push(order?.order_id);
-      });
+    // 👇 Generate and append summary image
+    const summaryImageBlob = await generateSummaryImage(payload);
+    if (summaryImageBlob) {
+      console.log("summaryImageBlob",summaryImageBlob)
+      formData.append('screenshot', summaryImageBlob, summaryImageBlob); // Correct filename
+    }
 
-      const formData = new FormData();
-      // stripe payment form
-      formData.append("token", stripToken);
-      formData.append("currency", getCurrency(order?.currency));
-      formData.append("amount", getFormattedPriceWith3(cardConsumableAmount));
-      formData.append(
-        "serviceCharges",
-        getFormattedPriceWith3(acutalServiceFee)
-      );
-      formData.append("orderid", order?.id);
-      formData.append(
-        "rewardamount",
-        getFormattedPriceWith3(consumableObj.rewardConsumableAmount)
-      );
-      formData.append(
-        "walletamount",
-        getFormattedPriceWith3(consumableObj.walletConsumableAmount)
-      );
-      formData.append("vat", getFormattedPriceWith3(actualVatFee));
-      formData.append(
-        "additionalAmount",
-        getFormattedPriceWith3(consumableObj.additionalAmount)
-      );
-      const payload = {
-        token: stripToken,
-        currency: getCurrency(order?.currency),
-        amount: getFormattedPriceWith3(cardConsumableAmount),
-        serviceCharges: getFormattedPriceWith3(acutalServiceFee),
-        orderid: order?.id,
-        rewardamount: getFormattedPriceWith3(consumableObj.rewardConsumableAmount),
-        walletamount: getFormattedPriceWith3(consumableObj.walletConsumableAmount),
-        vat: getFormattedPriceWith3(actualVatFee),
-        additionalAmount: getFormattedPriceWith3(consumableObj.additionalAmount),
-      };
+    // 👇 Submit the payment
+    const res = await makePayment(formData);
+    const { data: respData, error } = res || {};
 
-      const summaryImageBlob = await generateSummaryImage(payload);
-
-      console.log("summaryImageBlob :",summaryImageBlob)
-      return;
-      if (summaryImageBlob) {
-        formData.append('screenshot', summaryImageBlob, summaryImageBlob);
+    if (respData) {
+      if (respData?.result === 'Successfully Paid') {
+        toast.success("Successfully Paid");
+      } else if (respData?.result === PAYMENT_ERROR) {
+        toast.error(respData?.result || PAYMENT_ERROR);
+      } else {
+        toast.error(respData?.result);
       }
+    }
 
-      const res = await makePayment(formData);
+    if (error) {
+      console.error("Payment error:", error);
+      toast.error("Something Went Wrong.");
+    }
+  } catch (err) {
+    console.error("Unexpected error in handlePayment:", err);
+    toast.error("Unexpected error occurred.");
+  }
+};
 
-      const { data: respData, error } = res || {};
-
-      if (respData) {
-          if (respData?.result == 'Successfully Paid') {
-            toast.success("Successfully Paid")
-          } else if (respData?.result == PAYMENT_ERROR) {
-            toast.error(respData?.result || PAYMENT_ERROR)
-          } else{
-            toast.error(respData?.result)
-          }
-        }
-        if (error){
-          toast.error("Something Went Wrong.")
-        }
-    } catch (error) {}
-  };
 
   const getCardLogo = (brand) => {
     const brandLower = brand?.toLowerCase();
@@ -377,7 +358,7 @@ const OrderDetail = ({ params }) => {
         return false;
       }
 
-      if (respData?.status == 200) {
+      if (respData?.status == "success") {
         toast.success("Card added successfully");
         setAddCardModal(false);
         return true;

@@ -243,7 +243,7 @@ const Page = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {rewardsHistory.map((reward, index) => (
+                    {rewardsHistory?.map((reward, index) => (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-6 py-4 text-sm text-gray-900">
                           {reward?.addedts}

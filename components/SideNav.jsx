@@ -11,6 +11,9 @@ import { useSelector } from "react-redux";
 import { useGetProfileQuery } from "@/redux/user/profileApi";
 import { removeAdminFromURL } from "@/config/helpers";
 import { baseUrl } from "@/config";
+import { useDispatch } from "react-redux";
+import { logOut } from "@/redux/auth/authSlice";
+import { api } from "@/redux/service";
 
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const user = useSelector((state) => state.auth?.user);
@@ -67,13 +70,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     : alwaysVisibleItems;
 
   const handleClick = () => setShowPopUp(!showPopUp);
-
+  const dispatch = useDispatch();
   const LogOutUser = () => {
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      localStorage.removeItem("authToken");
-      router.push("/login");
-    }
+    console.log("User logged out");
+    dispatch(logOut()); // Clear redux state
+    dispatch(api.util.resetApiState());
+    router.push("/sign-in"); // Redirect to login
   };
 
   if (pathname === "/bank-transfer") {
