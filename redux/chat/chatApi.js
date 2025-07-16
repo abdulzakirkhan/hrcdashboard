@@ -32,6 +32,7 @@ export const chatApi = api.injectEndpoints({
     insertClientMesageThroughApp: builder.mutation({
       query: (body) => {
         return {
+          // /insertclientmsgthroughapp
           url: `/insertclientmsgthroughapp`,
           method: 'POST',
           body,

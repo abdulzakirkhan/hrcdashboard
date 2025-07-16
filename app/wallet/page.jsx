@@ -90,49 +90,52 @@ const page = () => {
   };
 
   // Function to handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!stripe || !elements) return;
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!stripe || !elements) return;
 
-    const cardNumberElement = elements.getElement(CardNumberElement);
+  const cardNumberElement = elements.getElement(CardNumberElement);
 
-    if (!cardNumberElement) {
-      toast.error("Card input is not ready yet.");
-      return;
-    }
+  if (!cardNumberElement) {
+    toast.error("Card input is not ready yet.");
+    return;
+  }
 
-    const { error, paymentMethod } = await stripe.createPaymentMethod({
-      type: "card",
-      card: cardNumberElement,
-    });
+  const { token, error } = await stripe.createToken(cardNumberElement);
 
-    if (error) {
-      toast.error(error.message);
-    } else {
-      const res = await addCard({
-        clientId: user?.userid,
-        cardType: paymentMethod?.card?.brand,
-        Lastfourdigit: paymentMethod?.card?.last4,
-        Stripekey: paymentMethod?.id,
-      });
+  if (error) {
+    toast.error(error.message);
+    return;
+  }
 
+  if (!token) {
+    toast.error("Failed to create token.");
+    return;
+  }
 
-      const { data: respData, error } = res;
+  const res = await addCard({
+    clientId: user?.userid,
+    cardType: token?.card?.brand,
+    Lastfourdigit: token?.card?.last4,
+    Stripekey: token?.id, // 🔑 This is the token you'll store
+  });
 
-      if (respData) {
-        if (respData?.result == "Client Card Detail Added Successfully") {
-          toast.success("Card added successfully");
-          setAddCardModal(false);
-          return true;
-        } else toast.error("error while adding card");
-      }
+  const { data: respData, error: mutationError } = res;
 
-      if(error) {
-        toast.error(error?.data?.message || "Error while adding card");
-        return false;
-      }
-    }
-  };
+  if (respData?.result === "Client Card Detail Added Successfully") {
+    toast.success("Card added successfully");
+    setAddCardModal(false);
+    return true;
+  }
+
+  if (mutationError) {
+    toast.error(mutationError?.data?.message || "Error while adding card");
+    return false;
+  } else {
+    toast.error(respData?.result || "Error while adding card");
+  }
+};
+
 
 
 
@@ -205,13 +208,13 @@ const page = () => {
 
       console.log("respData", respData);
       if (respData) {
-          if (respData?.result == 'Successfully Added Into Wallet') {
-            toast.success(respData?.result || "Successfully Added Into Wallet");
-          } else if (respData?.result == "Stripe API Error: Your card was declined.") {
-            toast.error(respData?.result || "Error while topping up wallet");
-          } else
-            toast.error(respData?.result || "Error while topping up wallet");
+        if (respData?.result == 'Successfully Added Into Wallet') {
+          toast.success(respData?.result || "Successfully Added Into Wallet");
+          setAmount(0)
+        }else{
+          toast.error(respData?.result || "Error while topping up wallet");
         }
+      }
     } catch (error) {
       toast.error("Error while topping up wallet");
     }

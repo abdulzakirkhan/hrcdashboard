@@ -614,3 +614,46 @@ const aa = [
                 </section>
             )}
         </>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const onFileChange = (e) => {
+    const files = e.target.files;
+    console.log("files:", e);
+
+    // return
+    if (!files || files.length === 0) return;
+    const fileArray = Array.from(files).map((file) => ({
+      uri: URL.createObjectURL(file),
+      type: file.type,
+      name: file.name,
+    }));
+
+     const nonImageFiles = fileArray.filter((file) => !file.type.startsWith("image/"));
+    
+
+      console.log("📂 fileArray:", fileArray);
+
+    // Check if the first file is an image (you can also do per-file if needed)
+    const isImage = files[0].type.startsWith("image");
+
+    if (isImage) {
+      setSelectedImage(fileArray);
+      setPayloadImages(Array.from(files))
+    } else {
+      setSelectPdf(nonImageFiles);
+    }
+
+    // ✅ Reset input to allow selecting the same file again
+    e.target.value = "";
+  };

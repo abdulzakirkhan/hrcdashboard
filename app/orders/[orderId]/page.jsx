@@ -321,57 +321,61 @@ const actualVatFee = calculatePaymentVatFees(cardConsumableAmount);
         return <FaCreditCard size={iconSize} className="text-gray-500" />;
     }
   };
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!stripe || !elements) return;
+  if (!stripe || !elements) return;
 
-    const cardNumberElement = elements.getElement(CardNumberElement);
-    if (!cardNumberElement) {
-      toast.error("Card input is not ready yet.");
-      return;
-    }
+  const cardNumberElement = elements.getElement(CardNumberElement);
+  if (!cardNumberElement) {
+    toast.error("Card input is not ready yet.");
+    return;
+  }
 
-    const { error: stripeError, paymentMethod } =
-      await stripe.createPaymentMethod({
-        type: "card",
-        card: cardNumberElement,
-      });
+  // ✅ Create a token instead of a full PaymentMethod
+  const { token, error: stripeError } = await stripe.createToken(cardNumberElement);
 
-    if (stripeError) {
-      toast.error(stripeError.message);
-      return;
-    }
+  if (stripeError) {
+    toast.error(stripeError.message);
+    return;
+  }
 
-    try {
-      const res = await addCard({
-        clientId: user?.userid,
-        cardType: paymentMethod?.card?.brand,
-        Lastfourdigit: paymentMethod?.card?.last4,
-        Stripekey: paymentMethod?.id,
-      });
+  if (!token) {
+    toast.error("Failed to create Stripe token.");
+    return;
+  }
 
-      const { data: respData, error: apiError } = res;
-      console.log("res", respData);
-      if (respData?.error == true) {
-        toast.error(apiError?.data?.message);
-        return false;
-      }
+  try {
+    const res = await addCard({
+      clientId: user?.userid,
+      cardType: token.card?.brand,
+      Lastfourdigit: token.card?.last4,
+      Stripekey: token.id, // Send the token.id to backend
+    });
 
-      if (respData?.status == "success") {
-        toast.success("Card added successfully");
-        setAddCardModal(false);
-        return true;
-      } else {
-        toast.error("Error while adding card");
-        return false;
-      }
-    } catch (err) {
-      toast.error("Unexpected error occurred");
-      console.error("Card submission error:", err);
+    const { data: respData, error: apiError } = res;
+    console.log("res", respData);
+
+    if (respData?.error === true) {
+      toast.error(apiError?.data?.message || "API Error while adding card");
       return false;
     }
-  };
+
+    if (respData?.status === "success") {
+      toast.success("Card added successfully");
+      setAddCardModal(false);
+      return true;
+    } else {
+      toast.error("Error while adding card");
+      return false;
+    }
+  } catch (err) {
+    toast.error("Unexpected error occurred");
+    console.error("Card submission error:", err);
+    return false;
+  }
+};
+
 
   const stripeInputStyle = {
     style: {
@@ -510,7 +514,7 @@ const actualVatFee = calculatePaymentVatFees(cardConsumableAmount);
           {addCardModal && (
             <>
               <div className="w-full h-full fixed inset-0 bg-black opacity-30" />
-              <div className="absolute !top-12 left-1/2 transform -translate-x-1/2 shadow-xl rounded-md backdrop-blur-md bg-white p-6 w-96 md:max-w-screen-md">
+              <div className="absolute !top-12 left-1/2 transform z-50 -translate-x-1/2 shadow-xl rounded-md backdrop-blur-md bg-white p-6 w-96 md:max-w-screen-md">
                 <h2 className="text-lg font-semibold text-gray-700 mb-4">
                   Add New Card
                 </h2>
@@ -883,7 +887,7 @@ const actualVatFee = calculatePaymentVatFees(cardConsumableAmount);
                             ${" "}
                             {walletAmount?.rewardsamount
                               ? Number(walletAmount?.rewardsamount).toFixed(2)
-                              : "2.3"}
+                              : "0.0"}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -892,9 +896,8 @@ const actualVatFee = calculatePaymentVatFees(cardConsumableAmount);
                           </span>
                           <span className="text-sm text-gray-600">
                             ${" "}
-                            {walletAmount?.amount
-                              ? Number(walletAmount?.amount).toFixed(2)
-                              : "0:00"}
+                            {isChecked ? `- ${Number(walletAmount?.amount).toFixed(2)}`
+                              : Number(walletAmount?.amount).toFixed(2) || "0.0"}
                           </span>
                         </div>
                       </div>

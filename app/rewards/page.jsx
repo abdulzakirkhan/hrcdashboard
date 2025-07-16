@@ -227,7 +227,7 @@ const Page = () => {
                   Reward History
                 </h3>
               </div>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto h-[400px]">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>

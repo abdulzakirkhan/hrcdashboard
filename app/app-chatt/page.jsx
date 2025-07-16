@@ -1,5 +1,5 @@
 "use client";
-import { RxCross2 } from "react-icons/rx";
+import { RxCross1, RxCross2 } from "react-icons/rx";
 import {
   useGetAllChatsQuery,
   useInsertClientMesageThroughAppMutation,
@@ -17,36 +17,23 @@ import { format, isToday, isYesterday, parseISO } from "date-fns";
 import voiceButtonAnimation  from "../../constants/voiceButtonAnimation.json"
 import Lottie from "lottie-react";
 import { AiOutlineAudio } from "react-icons/ai";
+import { baseUrl } from "@/config";
+
+
+import { Document, Page, pdfjs } from 'react-pdf';
+
+
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
 const ChatPage = () => {
-  const dummyData = [
-    {
-      sender: "Customer",
-      content: "Hello, I need help with my order.",
-      date: "2025-01-20 11:17:03",
-    },
-    {
-      sender: "Support",
-      content:
-        "Sure, I'd be happy to assist you. What seems to be the problem?",
-      date: "2025-01-20 11:17:03",
-    },
-    {
-      sender: "Customer",
-      content: "I haven't received my item yet.",
-      date: "2025-01-20 11:17:03",
-    },
-    {
-      sender: "Support",
-      content: "Let me check your order status.",
-      date: "2025-01-20 11:17:03",
-    },
-  ];
+
   const user = useSelector((state) => state.auth?.user);
   const [page, setPage] = useState(0);
   // State to manage the message input and chat history
   const [message, setMessage] = useState("");
   const [messageIdToReply, setMessageIdToReply] = useState();
   const [selectedDocmunet, setSelectedDocument] = useState();
+  const [selectPdf, setSelectPdf] = useState([])
+  const [selectedPdfPreview, setSelectedPdfPreview] = useState([])
   const [selectedImage, setSelectedImage] = useState();
   const {
     data: getAllChats,
@@ -110,34 +97,47 @@ const ChatPage = () => {
 
   // Handle file selection
   // This function will be called when the user selects a file
-  const onFileChange = (e) => {
-    const files = e.target.files;
-    console.log("files:", files);
 
-    // return
-    if (!files || files.length === 0) return;
-    const fileArray = Array.from(files).map((file) => ({
+
+  const onFileChange = (e) => {
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+
+  const fileArray = Array.from(files);
+
+  // Generate preview for all files
+  const previewArray = fileArray.map((file) => ({
+    uri: URL.createObjectURL(file),
+    type: file.type,
+    name: file.name,
+  }));
+
+  const imageFiles = fileArray.filter((file) => file.type.startsWith("image/"));
+  const nonImageFiles = fileArray.filter((file) => !file.type.startsWith("image/"));
+
+  console.log("📂 All Files:", fileArray);
+  console.log("🖼️ Image Files:", imageFiles);
+  console.log("📄 Non-image Files (e.g., PDF):", nonImageFiles);
+
+  if (imageFiles.length > 0) {
+    const imagePreview = imageFiles.map((file) => ({
       uri: URL.createObjectURL(file),
       type: file.type,
       name: file.name,
     }));
-    
 
-    console.log("📂 fileArray:", fileArray);
+    setSelectedImage(imagePreview);
+    setPayloadImages(imageFiles);
+  }
 
-    // Check if the first file is an image (you can also do per-file if needed)
-    const isImage = files[0].type.startsWith("image");
+  if (nonImageFiles.length > 0) {
+    setSelectPdf(nonImageFiles); // ✅ This is now a list of actual PDF `File` objects
+    setSelectedPdfPreview(nonImageFiles)
+  }
 
-    if (isImage) {
-      setSelectedImage(fileArray);
-      setPayloadImages(Array.from(files))
-    } else {
-      setSelectedDocument(fileArray);
-    }
+  e.target.value = "";
+};
 
-    // ✅ Reset input to allow selecting the same file again
-    e.target.value = "";
-  };
 
   const handleRemoveImage = (index) => {
     if (selectedImage && selectedImage.length > 0) {
@@ -148,7 +148,7 @@ const ChatPage = () => {
   }
 
 
-  console.log("payloadImages",payloadImages?.length);
+  console.log("selectedDocument",selectedDocmunet);
   // payloadImages.map((file) => {
   //   console.log("📂 file:", file);
   // });
@@ -157,19 +157,22 @@ const ChatPage = () => {
     setSearchFilterData(undefined);
     setCurrentItemIndex(0);
     setCurrentSectionIndex(0);
+    if(message === "" && payloadImages?.length < 1 && selectPdf?.length < 1){
+      return
+    }
     const body = new FormData();
     body.append("clientid", user?.userid);
+    if(selectPdf?.length > 0){
+        body.append("filemsg[]", selectPdf[0]);
+    }
 
-    // if(recordedBlob){
-    //   console.log("voiceMessage",recordedBlob)
-    //   body.append('filemsg',recordedBlob);
-    // }
     if(payloadImages?.length > 0){
       payloadImages.forEach((file) => {
-        body.append("filemsg[]", file);
-      });
+        body.append("filemsg", file);
+    });
+
     }else if(recordedBlob){
-      body.append('filemsg',recordedBlob);
+      body.append('filemsg',recordedBlob,"voice.webm");
     }else{
       body.append("msg", message.trim());
       body.append("currency", userCurrencyToSend);
@@ -187,9 +190,11 @@ const ChatPage = () => {
     if (error) {
       toast.error("Something went wrong.");
     }
+    setRecordedBlob(null)
     setMessage("");
-    setSelectedImage(); // Reset selected image after sending
+    setSelectedImage();
     setPayloadImages([])
+    setSelectPdf([])
   };
 
   const [seenAllMessages] = useSeenAllMessagesMutation();
@@ -197,63 +202,14 @@ const ChatPage = () => {
     await seenAllMessages({ userId: user?.userid });
   };
 
-  useEffect(() => {
-    if (getAllChats?.result) {
-      setMessages(getAllChats?.result);
-    }
-  }, [getAllChats]);
+
 
   const userCurrency = userCurrencyAndCountry?.result?.currency;
 
   const isFocusedRef = useRef(false);
   // 7a130211dc840dcf7005
 
-  useEffect(() => {
-    // console.log("⏳ Subscribing to Pusher...");
-    const channel = pusher.subscribe("demo_pusher");
 
-    pusher.connection.bind("connected", () => {
-      console.log("✅ Pusher connected!");
-    });
-
-    pusher.connection.bind("error", (err) => {
-      console.error("❌ Pusher connection error:", err);
-    });
-
-    channel.bind_global((eventName, data) => {
-      // console.log("📨 New message received:", eventName, data);
-      let message = data.message;
-
-      // console.log("message",message)
-      // return
-      // let msg = message.msg;
-      let msgfrom = message?.msgfrom;
-      let responseTo = message?.respondTo;
-      let obj = {
-        id: message?.mid,
-        message: message?.msg,
-        msgfile: message?.msgfile,
-        messagefrom: message?.msgfrom,
-        orderSummary: message?.orderSummary,
-        msgstatus: message?.msgstatus,
-        date: message?.msgdate,
-        time: message?.tsdate,
-        transfer: "",
-        respondTo: responseTo,
-      };
-
-      if (msgfrom == user?.userid || message?.msgto == user?.userid) {
-        setMessages((prevChats) => [...prevChats, obj]);
-        setRealTimeMessages((prevMessages) => [...prevMessages, obj]);
-        setSudoName(message?.sudoname);
-      }
-    });
-
-    return () => {
-      channel.unbind_all();
-      channel.unsubscribe();
-    };
-  }, []);
 
 
   // Load more data when the user scrolls to the top
@@ -273,18 +229,8 @@ const ChatPage = () => {
     }
   };
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-  }, []);
 
-  useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "auto" }); // or "smooth"
-    }
-  }, []);
-
-  // console.log("getAllChats:", getAllChats);
+  console.log("getAllChats:", getAllChats);
 
   const handleVoiceRecording = async () => {
     if (!isVoiceStart) {
@@ -319,11 +265,120 @@ const ChatPage = () => {
   };
   // console.log("recordedBlog",recordedBlob)
 
+
+
+  useEffect(() => {
+    if (getAllChats?.result) {
+      setMessages(getAllChats?.result);
+    }
+  }, [getAllChats]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+  }, []);
+
+  useEffect(() => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "auto" }); // or "smooth"
+    }
+  }, []);
+
+
+
+  useEffect(() => {
+    const channel = pusher.subscribe("demo_pusher");
+
+    pusher.connection.bind("connected", () => {
+      console.log("✅ Pusher connected!");
+    });
+
+    pusher.connection.bind("error", (err) => {
+      console.error("❌ Pusher connection error:", err);
+    });
+
+    channel.bind_global((eventName, data) => {
+      // console.log("📨 New message received:", eventName, data);
+      let message = data.message;
+      const isAudio = typeof message?.msg === 'string' && message.msg.startsWith('http') && message?.type === 'audio';
+      console.log("message :",message)
+      let msgfrom = message?.msgfrom;
+      let responseTo = message?.respondTo;
+      if (isAudio) {
+        console.log("🔊 Received audio message URL:", message.msg);
+      }
+      let obj = {
+        id: message?.mid,
+        message: message?.msg,
+        type: message?.type || 'text',
+        msgfile: message?.msgfile,
+        messagefrom: message?.msgfrom,
+        orderSummary: message?.orderSummary,
+        msgstatus: message?.msgstatus,
+        date: message?.msgdate,
+        time: message?.tsdate,
+        transfer: "",
+        respondTo: responseTo,
+      };
+
+      if (msgfrom == user?.userid || message?.msgto == user?.userid) {
+        setMessages((prevChats) => [...prevChats, obj]);
+        setRealTimeMessages((prevMessages) => [...prevMessages, obj]);
+        setSudoName(message?.sudoname);
+      }
+    });
+
+    return () => {
+      channel.unbind_all();
+      channel.unsubscribe();
+    };
+  }, []);
+
+  const isAudioFile = (value) => {
+    return typeof value === 'string' && /\.(mp3|wav|m4a|ogg|webm)$/i.test(value.trim());
+  };
+
+
+  const isPngFile = (value) => {
+    if (!value || typeof value !== "string") return false;
+    return /\.png$/i.test(value.trim());
+  };
+
+  const isPdfFile = (value) => {
+  if (!value || typeof value !== "string") return false;
+  return /\.pdf$/i.test(value.trim());
+};
+
+
+   const getAudioMimeType = (filename) => {
+  if (!filename) return "audio/mpeg";
+  const ext = filename.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "mp3":
+      return "audio/mpeg";
+    case "wav":
+      return "audio/wav";
+    case "m4a":
+      return "audio/mp4";
+    case "ogg":
+      return "audio/ogg";
+    case "webm":
+      return "audio/webm";
+    default:
+      return "audio/mpeg";
+  }
+};
+
+
+    console.log("getAll",getAllChats)
+
+
+
   return (
     <>
       <section className="mt-20">
         {/* Header */}
-        <div className="bg-[#4B67DB] fixed w-full top-[75px] z-10">
+        <div className="bg-[#4B67DB] fixed w-full top-[75px] z-10" >
           <div className="container mx-auto px-6 py-2">
             <h2 className="text-white">Customer Support</h2>
           </div>
@@ -334,7 +389,7 @@ const ChatPage = () => {
           <div
             className="messagesContainer flex flex-col overflow-y-auto h-[70vh] py-10 space-y-6"
             ref={containerRef}
-            onScroll={(e) => onScrollEnd(e)}
+            onScroll={(e) => onScrollEnd(e)}  id="chatt"
           >
             {Object.entries(groupedMessages).map(([date, msgs]) => {
               const parsedDate = parseISO(date); // "2025-07-08" -> Date object
@@ -344,8 +399,11 @@ const ChatPage = () => {
                 ? "Yesterday"
                 : format(parsedDate, "dd MMM yyyy");
 
+               
+
+                // console.log("baseUrl+msg?.message",)
               return (
-                <div key={date}>
+                <div key={date+Math.random()}>
                   {/* 🗓️ Date separator */}
                   <div className="text-center my-4">
                     <span className="bg-gray-300 text-gray-800 px-4 py-1 rounded-full text-sm font-medium">
@@ -354,36 +412,64 @@ const ChatPage = () => {
                   </div>
 
                   {/* 💬 Messages */}
-                  {msgs.map((msg, index) => (
-                    <div key={index} className="mb-4">
-                      <div
-                        className={`flex ${
-                          msg.messagefrom == user?.userid
-                            ? "justify-start"
-                            : "justify-end"
-                        }`}
-                      >
-                        <div
-                          className={`p-3 max-w-[60%] rounded-lg ${
-                            msg.messagefrom == user?.userid
-                              ? "bg-blue-100"
-                              : "bg-gray-100"
-                          }`}
-                        >
-                          <p>{msg.message}</p>
-                        </div>
-                      </div>
-                      <p
-                        className={`text-xs mt-1 ${
-                          msg.messagefrom == user?.userid
-                            ? "text-blue-500 text-start"
-                            : "text-gray-500 text-end"
-                        }`}
-                      >
-                        {msg.time}
-                      </p>
-                    </div>
-                  ))}
+                  {msgs.map((msg, index) => {
+  const fileUrl = `${baseUrl}/newchatfilesuploads/${msg?.msgfile}`;
+  const isAudio = isAudioFile(msg?.msgfile);
+  const isImage = isPngFile(msg?.msgfile);
+
+  const isPdf = isPdfFile(msg?.msgfile)
+
+  if(isPdf){
+    console.log("fileUrl",fileUrl)
+  }
+  return (
+    <div key={msg?.id} className="mb-4 p-4">
+      <div
+        className={`flex ${
+          msg?.messagefrom == user?.userid ? "justify-end" : "justify-start"
+        }`}
+      >
+        <div
+          className={`p-3 ${!isAudio ? "max-w-[60%]" : "w-[40%]"} rounded-lg ${
+            msg?.messagefrom == user?.userid ? "bg-blue-100" : "bg-gray-100"
+          }`}
+        >
+          {isImage ? (
+            <img
+              src={fileUrl}
+              alt="chat-img"
+              className="max-w-xs rounded-md"
+            />
+          ) : isAudio ? (
+            <audio controls preload="metadata" className="w-full">
+              <source
+                src={fileUrl}
+                type={"audio/mpeg"}
+              />
+              Your browser does not support the audio element.
+            </audio>
+          ) : isPdfFile ? <div className="h-[400] overflow-y-auto border border-red">
+            <Document file={fileUrl}>
+      <Page pageNumber={1} width={400} height={400} />
+    </Document>
+          </div> : (
+            <p>{msg?.message}</p>
+          )}
+        </div>
+      </div>
+      <p
+        className={`text-xs mt-1 ${
+          msg?.messagefrom == user?.userid
+            ? "text-blue-500 text-end"
+            : "text-gray-500 text-start"
+        }`}
+      >
+        {msg.time}
+      </p>
+    </div>
+  );
+})}
+
                 </div>
               );
             })}
@@ -444,6 +530,25 @@ const ChatPage = () => {
                   ))}
                 </div>
               )}
+
+
+              {selectPdf.map((file, i) => (
+                <div className="absolute bottom-20 left-[20%]">
+                  <div className="text-end">
+                    <button type="button" className="hover:text-red" onClick={() => {
+                      setSelectPdf((prev) => prev.filter((_, index) => index !== i));
+                    }}><RxCross1 size={30} /></button>
+                  </div>
+                  <iframe
+                    key={i}
+                    src={URL.createObjectURL(file)}
+                    title={`PDF-${i}`}
+                    width="100%"
+                    height="400px"
+                    className="max-w-xs rounded-md border"
+                  />
+                </div>
+              ))}
           </div>
         </div>
       </section>

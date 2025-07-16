@@ -94,7 +94,7 @@ const Orders = ({ordersData}) => {
                   {order?.payment_status === 2 ? (
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-red">Remaining Amount:</span>
-                      <span className="text-red">{order?.balanceamount}</span>
+                      <span className="text-red">{Number(order?.balanceamount).toFixed(2)}</span>
                     </div>
                   ) : ""}
                 </div>
