@@ -16,7 +16,7 @@
 import React, { useState } from "react";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-//import { getAuth, signInWithPhoneNumber, RecaptchaVerifier } from "firebase/auth";
+// import { getAuth, signInWithPhoneNumber, RecaptchaVerifier } from "firebase/auth";
 //import { app } from "@/lib/firebase"; // Your Firebase config file
 
 const page = () => {
@@ -40,18 +40,19 @@ const page = () => {
 //   };
 
   const handleVerify = async (e) => {
-    // e.preventDefault();
-    // setError("");
-    // setMessage("");
+    e.preventDefault();
+    setError("");
+    setMessage("");
+    console.log("phone",phone)
+    if (!phone) {
+      setError("Please enter a valid phone number.");
+      return;
+    }
 
-    // if (!phone) {
-    //   setError("Please enter a valid phone number.");
-    //   return;
-    // }
-
-    // // 🚫 Block Pakistan numbers manually
+    // 🚫 Block Pakistan numbers manually
     // if (phone.startsWith("+92")) {
     //   setError("Phone numbers from Pakistan are not allowed.");
+    //   window.alert("Phone numbers from Pakistan are not allowed.")
     //   return;
     // }
 

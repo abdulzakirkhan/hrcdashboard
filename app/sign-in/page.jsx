@@ -23,7 +23,7 @@ export default function SignInPage() {
   const validationSchema = Yup.object({
     id: Yup.string().required("User ID is required"),
     password: Yup.string()
-      .min(6, "Password must be at least 6 characters")
+      .min(5, "Password must be at least 5 characters")
       .required("Password is required"),
     ...(isSignUp && {
       confirmPassword: Yup.string()
@@ -35,6 +35,8 @@ export default function SignInPage() {
 
   // Login handler
   const handleLogin = async (values) => {
+    // console.log("values",values)
+    // return;
     setIsSubmitting(true);
     const formData = new FormData();
 

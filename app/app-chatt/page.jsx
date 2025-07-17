@@ -11,29 +11,33 @@ import pusher from "@/utils/pusher";
 import { useRouter } from "next/router";
 import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { FaPaperclip, FaMicrophone, FaTelegramPlane, FaFileAudio } from "react-icons/fa"; // Import icons
+import {
+  FaPaperclip,
+  FaMicrophone,
+  FaTelegramPlane,
+  FaFileAudio,
+} from "react-icons/fa"; // Import icons
 import { useSelector } from "react-redux";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
-import voiceButtonAnimation  from "../../constants/voiceButtonAnimation.json"
+import voiceButtonAnimation from "../../constants/voiceButtonAnimation.json";
 import Lottie from "lottie-react";
 import { AiOutlineAudio } from "react-icons/ai";
 import { baseUrl } from "@/config";
 
+import { Document, Page, pdfjs } from "react-pdf";
 
-import { Document, Page, pdfjs } from 'react-pdf';
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
 
-
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
+import mammoth from "mammoth";
 const ChatPage = () => {
-
   const user = useSelector((state) => state.auth?.user);
   const [page, setPage] = useState(0);
   // State to manage the message input and chat history
   const [message, setMessage] = useState("");
   const [messageIdToReply, setMessageIdToReply] = useState();
   const [selectedDocmunet, setSelectedDocument] = useState();
-  const [selectPdf, setSelectPdf] = useState([])
-  const [selectedPdfPreview, setSelectedPdfPreview] = useState([])
+  const [selectPdf, setSelectPdf] = useState([]);
+  const [selectedPdfPreview, setSelectedPdfPreview] = useState([]);
   const [selectedImage, setSelectedImage] = useState();
   const {
     data: getAllChats,
@@ -59,7 +63,7 @@ const ChatPage = () => {
   const [allchats, setAllChats] = useState();
   const [realTimeMessages, setRealTimeMessages] = useState([]);
   const [sudoName, setSudoName] = useState("Customer Support");
-  const [isVoiceStart, setIsVoiceStart] = useState(false)
+  const [isVoiceStart, setIsVoiceStart] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState(null);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
@@ -85,59 +89,71 @@ const ChatPage = () => {
     setMessage(e.target.value);
   };
 
-
   // Handle file input change
   const fileInputRef = useRef(null);
-  
+
   const handleButtonClick = () => {
     fileInputRef.current?.click();
   };
 
-  const [payloadImages, setPayloadImages] = useState()
-
+  const [payloadImages, setPayloadImages] = useState();
+  const [docxFiles, setDocxFiles] = useState([])
   // Handle file selection
   // This function will be called when the user selects a file
-
-
+const [docxHtml, setDocxHtml] = useState("");
   const onFileChange = (e) => {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-  const fileArray = Array.from(files);
+    const fileArray = Array.from(files);
 
-  // Generate preview for all files
-  const previewArray = fileArray.map((file) => ({
-    uri: URL.createObjectURL(file),
-    type: file.type,
-    name: file.name,
-  }));
-
-  const imageFiles = fileArray.filter((file) => file.type.startsWith("image/"));
-  const nonImageFiles = fileArray.filter((file) => !file.type.startsWith("image/"));
-
-  console.log("📂 All Files:", fileArray);
-  console.log("🖼️ Image Files:", imageFiles);
-  console.log("📄 Non-image Files (e.g., PDF):", nonImageFiles);
-
-  if (imageFiles.length > 0) {
-    const imagePreview = imageFiles.map((file) => ({
+    // Generate preview for all files
+    const previewArray = fileArray.map((file) => ({
       uri: URL.createObjectURL(file),
       type: file.type,
       name: file.name,
     }));
 
-    setSelectedImage(imagePreview);
-    setPayloadImages(imageFiles);
-  }
+    const docxFilesArr = fileArray.filter(
+    (file) =>
+      file.name.toLowerCase().endsWith(".docx") ||
+      file.type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
 
-  if (nonImageFiles.length > 0) {
-    setSelectPdf(nonImageFiles); // ✅ This is now a list of actual PDF `File` objects
-    setSelectedPdfPreview(nonImageFiles)
-  }
+    if(docxFilesArr?.length > 0) {
+      setDocxFiles(docxFilesArr)
+    }
 
-  e.target.value = "";
-};
+    const imageFiles = fileArray.filter((file) =>
+      file.type.startsWith("image/")
+    );
+    const pdfFiles = fileArray.filter(
+      (file) => file.type === "application/pdf"
+    );
 
+    console.log("📂 All Files:", fileArray);
+    console.log("🖼️ Image Files:", imageFiles);
+    console.log("📄 Non-image Files (e.g., PDF):");
+
+    if (imageFiles.length > 0) {
+      const imagePreview = imageFiles.map((file) => ({
+        uri: URL.createObjectURL(file),
+        type: file.type,
+        name: file.name,
+      }));
+
+      setSelectedImage(imagePreview);
+      setPayloadImages(imageFiles);
+    }
+
+    if (pdfFiles.length > 0) {
+      setSelectPdf(pdfFiles); // ✅ This is now a list of actual PDF `File` objects
+      setSelectedPdfPreview(pdfFiles);
+    }
+
+    e.target.value = "";
+  };
 
   const handleRemoveImage = (index) => {
     if (selectedImage && selectedImage.length > 0) {
@@ -145,10 +161,19 @@ const ChatPage = () => {
       updatedImages.splice(index, 1); // Remove the image at the specified index
       setSelectedImage(updatedImages); // Update state with the new array
     }
+  };
+useEffect(() => {
+  const reader = new FileReader();
+  if (docxFiles[0]) {
+    reader.onload = async (event) => {
+      const arrayBuffer = event.target.result;
+      const result = await mammoth.convertToHtml({ arrayBuffer });
+      setDocxHtml(result.value); // HTML content
+    };
+    reader.readAsArrayBuffer(docxFiles[0]);
   }
-
-
-  console.log("selectedDocument",selectedDocmunet);
+}, [docxFiles]);
+  console.log("selectedDocument", selectedDocmunet);
   // payloadImages.map((file) => {
   //   console.log("📂 file:", file);
   // });
@@ -157,30 +182,32 @@ const ChatPage = () => {
     setSearchFilterData(undefined);
     setCurrentItemIndex(0);
     setCurrentSectionIndex(0);
-    if(message === "" && payloadImages?.length < 1 && selectPdf?.length < 1){
-      return
+    if (message === "" && payloadImages?.length < 1 && selectPdf?.length < 1) {
+      return;
     }
     const body = new FormData();
     body.append("clientid", user?.userid);
-    if(selectPdf?.length > 0){
-        body.append("filemsg[]", selectPdf[0]);
+    if (selectPdf?.length > 0) {
+      body.append("filemsg[]", selectPdf[0]);
     }
 
-    if(payloadImages?.length > 0){
+    if(docxFiles?.length > 0){
+      body.append("filemsg[]", docxFiles[0]);
+    }
+
+    if (payloadImages?.length > 0) {
       payloadImages.forEach((file) => {
         body.append("filemsg", file);
-    });
-
-    }else if(recordedBlob){
-      body.append('filemsg',recordedBlob,"voice.webm");
-    }else{
+      });
+    } else if (recordedBlob) {
+      body.append("filemsg", recordedBlob, "voice.webm");
+    } else {
       body.append("msg", message.trim());
       body.append("currency", userCurrencyToSend);
     }
 
     // stoping api call
-    for (let [key, value
-    ] of body.entries()) {
+    for (let [key, value] of body.entries()) {
       console.log(`${key}:`, value);
     }
 
@@ -190,11 +217,11 @@ const ChatPage = () => {
     if (error) {
       toast.error("Something went wrong.");
     }
-    setRecordedBlob(null)
+    setRecordedBlob(null);
     setMessage("");
     setSelectedImage();
-    setPayloadImages([])
-    setSelectPdf([])
+    setPayloadImages([]);
+    setSelectPdf([]);
   };
 
   const [seenAllMessages] = useSeenAllMessagesMutation();
@@ -202,15 +229,10 @@ const ChatPage = () => {
     await seenAllMessages({ userId: user?.userid });
   };
 
-
-
   const userCurrency = userCurrencyAndCountry?.result?.currency;
 
   const isFocusedRef = useRef(false);
   // 7a130211dc840dcf7005
-
-
-
 
   // Load more data when the user scrolls to the top
   const loadMoreData = async () => {
@@ -229,14 +251,15 @@ const ChatPage = () => {
     }
   };
 
-
   console.log("getAllChats:", getAllChats);
 
   const handleVoiceRecording = async () => {
     if (!isVoiceStart) {
       // Start recording
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
         const mediaRecorder = new MediaRecorder(stream);
         chunksRef.current = [];
 
@@ -247,7 +270,7 @@ const ChatPage = () => {
         };
 
         mediaRecorder.onstop = () => {
-          const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+          const blob = new Blob(chunksRef.current, { type: "audio/webm" });
           setRecordedBlob(blob);
         };
 
@@ -264,8 +287,6 @@ const ChatPage = () => {
     }
   };
   // console.log("recordedBlog",recordedBlob)
-
-
 
   useEffect(() => {
     if (getAllChats?.result) {
@@ -284,8 +305,6 @@ const ChatPage = () => {
     }
   }, []);
 
-
-
   useEffect(() => {
     const channel = pusher.subscribe("demo_pusher");
 
@@ -300,8 +319,11 @@ const ChatPage = () => {
     channel.bind_global((eventName, data) => {
       // console.log("📨 New message received:", eventName, data);
       let message = data.message;
-      const isAudio = typeof message?.msg === 'string' && message.msg.startsWith('http') && message?.type === 'audio';
-      console.log("message :",message)
+      const isAudio =
+        typeof message?.msg === "string" &&
+        message.msg.startsWith("http") &&
+        message?.type === "audio";
+      console.log("message :", message);
       let msgfrom = message?.msgfrom;
       let responseTo = message?.respondTo;
       if (isAudio) {
@@ -310,7 +332,7 @@ const ChatPage = () => {
       let obj = {
         id: message?.mid,
         message: message?.msg,
-        type: message?.type || 'text',
+        type: message?.type || "text",
         msgfile: message?.msgfile,
         messagefrom: message?.msgfrom,
         orderSummary: message?.orderSummary,
@@ -335,9 +357,11 @@ const ChatPage = () => {
   }, []);
 
   const isAudioFile = (value) => {
-    return typeof value === 'string' && /\.(mp3|wav|m4a|ogg|webm)$/i.test(value.trim());
+    return (
+      typeof value === "string" &&
+      /\.(mp3|wav|m4a|ogg|webm)$/i.test(value.trim())
+    );
   };
-
 
   const isPngFile = (value) => {
     if (!value || typeof value !== "string") return false;
@@ -345,40 +369,36 @@ const ChatPage = () => {
   };
 
   const isPdfFile = (value) => {
-  if (!value || typeof value !== "string") return false;
-  return /\.pdf$/i.test(value.trim());
-};
+    if (!value || typeof value !== "string") return false;
+    return /\.pdf$/i.test(value.trim());
+  };
 
+  const getAudioMimeType = (filename) => {
+    if (!filename) return "audio/mpeg";
+    const ext = filename.split(".").pop()?.toLowerCase();
+    switch (ext) {
+      case "mp3":
+        return "audio/mpeg";
+      case "wav":
+        return "audio/wav";
+      case "m4a":
+        return "audio/mp4";
+      case "ogg":
+        return "audio/ogg";
+      case "webm":
+        return "audio/webm";
+      default:
+        return "audio/mpeg";
+    }
+  };
 
-   const getAudioMimeType = (filename) => {
-  if (!filename) return "audio/mpeg";
-  const ext = filename.split(".").pop()?.toLowerCase();
-  switch (ext) {
-    case "mp3":
-      return "audio/mpeg";
-    case "wav":
-      return "audio/wav";
-    case "m4a":
-      return "audio/mp4";
-    case "ogg":
-      return "audio/ogg";
-    case "webm":
-      return "audio/webm";
-    default:
-      return "audio/mpeg";
-  }
-};
-
-
-    console.log("getAll",getAllChats)
-
-
+  console.log("getAll", getAllChats);
 
   return (
     <>
       <section className="mt-20">
         {/* Header */}
-        <div className="bg-[#4B67DB] fixed w-full top-[75px] z-10" >
+        <div className="bg-[#4B67DB] fixed w-full top-[75px] z-10">
           <div className="container mx-auto px-6 py-2">
             <h2 className="text-white">Customer Support</h2>
           </div>
@@ -389,7 +409,8 @@ const ChatPage = () => {
           <div
             className="messagesContainer flex flex-col overflow-y-auto h-[70vh] py-10 space-y-6"
             ref={containerRef}
-            onScroll={(e) => onScrollEnd(e)}  id="chatt"
+            onScroll={(e) => onScrollEnd(e)}
+            id="chatt"
           >
             {Object.entries(groupedMessages).map(([date, msgs]) => {
               const parsedDate = parseISO(date); // "2025-07-08" -> Date object
@@ -399,11 +420,9 @@ const ChatPage = () => {
                 ? "Yesterday"
                 : format(parsedDate, "dd MMM yyyy");
 
-               
-
-                // console.log("baseUrl+msg?.message",)
+              // console.log("baseUrl+msg?.message",)
               return (
-                <div key={date+Math.random()}>
+                <div key={date + Math.random()}>
                   {/* 🗓️ Date separator */}
                   <div className="text-center my-4">
                     <span className="bg-gray-300 text-gray-800 px-4 py-1 rounded-full text-sm font-medium">
@@ -413,63 +432,86 @@ const ChatPage = () => {
 
                   {/* 💬 Messages */}
                   {msgs.map((msg, index) => {
-  const fileUrl = `${baseUrl}/newchatfilesuploads/${msg?.msgfile}`;
-  const isAudio = isAudioFile(msg?.msgfile);
-  const isImage = isPngFile(msg?.msgfile);
+                    const fileUrl = `${baseUrl}/newchatfilesuploads/${msg?.msgfile}`;
+                    const isAudio = isAudioFile(msg?.msgfile);
+                    const isImage = isPngFile(msg?.msgfile);
 
-  const isPdf = isPdfFile(msg?.msgfile)
+                    const isPdf = msg?.msgfile !=="" ? isPdfFile(msg?.msgfile) : false;
 
-  if(isPdf){
-    console.log("fileUrl",fileUrl)
-  }
-  return (
-    <div key={msg?.id} className="mb-4 p-4">
-      <div
-        className={`flex ${
-          msg?.messagefrom == user?.userid ? "justify-end" : "justify-start"
-        }`}
-      >
-        <div
-          className={`p-3 ${!isAudio ? "max-w-[60%]" : "w-[40%]"} rounded-lg ${
-            msg?.messagefrom == user?.userid ? "bg-blue-100" : "bg-gray-100"
-          }`}
-        >
-          {isImage ? (
-            <img
-              src={fileUrl}
-              alt="chat-img"
-              className="max-w-xs rounded-md"
-            />
-          ) : isAudio ? (
-            <audio controls preload="metadata" className="w-full">
-              <source
-                src={fileUrl}
-                type={"audio/mpeg"}
-              />
-              Your browser does not support the audio element.
-            </audio>
-          ) : isPdfFile ? <div className="h-[400] overflow-y-auto border border-red">
-            <Document file={fileUrl}>
-      <Page pageNumber={1} width={400} height={400} />
-    </Document>
-          </div> : (
-            <p>{msg?.message}</p>
-          )}
-        </div>
-      </div>
-      <p
-        className={`text-xs mt-1 ${
-          msg?.messagefrom == user?.userid
-            ? "text-blue-500 text-end"
-            : "text-gray-500 text-start"
-        }`}
-      >
-        {msg.time}
-      </p>
-    </div>
-  );
-})}
+                    if (isPdf) {
+                      console.log("fileUrl isPdf", fileUrl);
+                    }
+                    return (
+                      <div key={msg?.id} className="mb-4 p-4">
+                        <div
+                          className={`flex ${
+                            msg?.messagefrom == user?.userid
+                              ? "justify-end"
+                              : "justify-start"
+                          }`}
+                        >
+                          <div
+                            className={`p-3 ${
+                              !isAudio ? "max-w-[60%]" : "w-[40%]"
+                            } rounded-lg ${
+                              msg?.messagefrom == user?.userid
+                                ? "bg-blue-100"
+                                : "bg-gray-100"
+                            }`}
+                          >
+                            {isImage ? (
+                              <img
+                                src={fileUrl}
+                                alt="chat-img"
+                                className="max-w-xs rounded-md"
+                              />
+                            ) : isAudio ? (
+                              <audio
+                                controls
+                                preload="metadata"
+                                className="w-full"
+                              >
+                                <source src={fileUrl} type={"audio/mpeg"} />
+                                Your browser does not support the audio element.
+                              </audio>
+                            ) : isPdf ? (
+                              <div className={`${isPdf ? "h-[400px] overflow-y-auto" : ""}`}>
+                                <div className="flex justify-between px-4 items-center mb-2">
+                                  <span className="font-medium text-gray-600">PDF Preview</span>
+                                  <a
+                                    href={fileUrl}
+                                    download
+                                    className="text-blue-500 hover:underline text-sm"
+                                  >
+                                    Download PDF
+                                  </a>
+                                </div>
 
+                                <Document file={fileUrl}>
+                                  <Page
+                                    pageNumber={1}
+                                    width={400}
+                                    height={400}
+                                  />
+                                </Document>
+                              </div>
+                            ) : (
+                              <p>{msg?.message}</p>
+                            )}
+                          </div>
+                        </div>
+                        <p
+                          className={`text-xs mt-1 ${
+                            msg?.messagefrom == user?.userid
+                              ? "text-blue-500 text-end"
+                              : "text-gray-500 text-start"
+                          }`}
+                        >
+                          {msg.time}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
@@ -492,7 +534,10 @@ const ChatPage = () => {
               />
 
               {/* Visible trigger button */}
-              <button className="bg-primary py-2 px-3 rounded-lg text-white" onClick={handleButtonClick}>
+              <button
+                className="bg-primary py-2 px-3 rounded-lg text-white"
+                onClick={handleButtonClick}
+              >
                 <FaPaperclip className="text-2xl cursor-pointer" />
               </button>
             </div>
@@ -504,8 +549,21 @@ const ChatPage = () => {
               placeholder="Type a message..."
               className="w-1/2 md:w-[73%] p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <button className="bg-primary py-2 px-3 rounded-lg text-white" onClick={handleVoiceRecording}>
-              {isVoiceStart ? <Lottie animationData={voiceButtonAnimation} loop={true} style={{width:"30px",height:"30px"}} /> : recordedBlob ? <FaFileAudio  /> : <FaMicrophone className="text-2xl cursor-pointer" />}
+            <button
+              className="bg-primary py-2 px-3 rounded-lg text-white"
+              onClick={handleVoiceRecording}
+            >
+              {isVoiceStart ? (
+                <Lottie
+                  animationData={voiceButtonAnimation}
+                  loop={true}
+                  style={{ width: "30px", height: "30px" }}
+                />
+              ) : recordedBlob ? (
+                <FaFileAudio />
+              ) : (
+                <FaMicrophone className="text-2xl cursor-pointer" />
+              )}
             </button>
             <button
               className="bg-primary flex items-center gap-2 px-6 py-2 rounded-lg text-white"
@@ -516,39 +574,85 @@ const ChatPage = () => {
             </button>
 
             {selectedImage?.length > 0 && (
-                <div className={`absolute ${selectedImage?.length === 1 ? "w-1/3" : "w-1/2"} h-44 -top-52 left-[20%] bg-white p-2 rounded-lg shadow-lg`}>
-                  {selectedImage.map((img, index) => (
-                    <div className={`shadow-lg relative border-2 border-gray-300 rounded-md ${selectedImage.length === 1 ? "w-1/2 h-full" : "w-32 h-16"} `} key={index}>
-                      <img
-                        key={index}
-                        src={img.uri}
-                        alt={`Selected ${index}`}
-                        className={`object-cover rounded-md object-center mb-2 ${selectedImage?.length === 1 ? "w-full" : "w-full"} h-full`}
-                      />
-                      <RxCross2 size={26} className="absolute -top-2 -right-3 cursor-pointer hover:text-rose-600" onClick={() => handleRemoveImage(index)} />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-
-              {selectPdf.map((file, i) => (
-                <div className="absolute bottom-20 left-[20%]">
-                  <div className="text-end">
-                    <button type="button" className="hover:text-red" onClick={() => {
-                      setSelectPdf((prev) => prev.filter((_, index) => index !== i));
-                    }}><RxCross1 size={30} /></button>
+              <div
+                className={`absolute ${
+                  selectedImage?.length === 1 ? "w-1/3" : "w-1/2"
+                } h-44 -top-52 left-[20%] bg-white p-2 rounded-lg shadow-lg`}
+              >
+                {selectedImage.map((img, index) => (
+                  <div
+                    className={`shadow-lg relative border-2 border-gray-300 rounded-md ${
+                      selectedImage.length === 1 ? "w-1/2 h-full" : "w-32 h-16"
+                    } `}
+                    key={index}
+                  >
+                    <img
+                      key={index}
+                      src={img.uri}
+                      alt={`Selected ${index}`}
+                      className={`object-cover rounded-md object-center mb-2 ${
+                        selectedImage?.length === 1 ? "w-full" : "w-full"
+                      } h-full`}
+                    />
+                    <RxCross2
+                      size={26}
+                      className="absolute -top-2 -right-3 cursor-pointer hover:text-rose-600"
+                      onClick={() => handleRemoveImage(index)}
+                    />
                   </div>
-                  <iframe
-                    key={i}
-                    src={URL.createObjectURL(file)}
-                    title={`PDF-${i}`}
-                    width="100%"
-                    height="400px"
-                    className="max-w-xs rounded-md border"
-                  />
+                ))}
+              </div>
+            )}
+
+            {selectPdf.map((file, i) => (
+              <div className="absolute bottom-20 left-[20%]">
+                <div className="text-end">
+                  <button
+                    type="button"
+                    className="hover:text-red"
+                    onClick={() => {
+                      setSelectPdf((prev) =>
+                        prev.filter((_, index) => index !== i)
+                      );
+                    }}
+                  >
+                    <RxCross1 size={30} />
+                  </button>
                 </div>
-              ))}
+                <iframe
+                  key={i}
+                  src={URL.createObjectURL(file)}
+                  title={`PDF-${i}`}
+                  width="100%"
+                  height="400px"
+                  className="max-w-xs rounded-md border"
+                />
+              </div>
+            ))}
+
+            {docxHtml && (
+              <div
+                className={`absolute ${
+                  selectedImage?.length === 1 ? "w-1/3" : "w-1/2"
+                } h-44 -top-52 left-[20%] bg-white p-2 rounded-lg shadow-lg`}
+              >
+                <div className="text-end">
+                  <button
+                    type="button"
+                    className="hover:text-red"
+                    onClick={() => {
+                      setDocxFiles(null)
+                    }}
+                  >
+                    <RxCross1 size={30} />
+                  </button>
+                </div>
+                <div
+                  className="border p-4 rounded max-h-[400px] overflow-y-auto"
+                  dangerouslySetInnerHTML={{ __html: docxHtml }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </section>
