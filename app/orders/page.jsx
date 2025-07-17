@@ -79,7 +79,7 @@ const OrdersPage = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-  // console.log("filteredOrders", filteredOrders);
+  console.log("filteredOrders", filteredOrders);
 
 
 

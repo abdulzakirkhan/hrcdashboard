@@ -182,7 +182,7 @@ useEffect(() => {
     setSearchFilterData(undefined);
     setCurrentItemIndex(0);
     setCurrentSectionIndex(0);
-    if (message === "" && payloadImages?.length < 1 && selectPdf?.length < 1) {
+    if (message === "" && payloadImages?.length < 1 && selectPdf?.length < 1 && docxFiles?.length < 1) {
       return;
     }
     const body = new FormData();
@@ -392,6 +392,11 @@ useEffect(() => {
     }
   };
 
+
+  const isDocxFile = (value) => {
+  if (!value || typeof value !== "string") return false;
+  return /\.docx$/i.test(value.trim());
+};
   console.log("getAll", getAllChats);
 
   return (
@@ -437,7 +442,7 @@ useEffect(() => {
                     const isImage = isPngFile(msg?.msgfile);
 
                     const isPdf = msg?.msgfile !=="" ? isPdfFile(msg?.msgfile) : false;
-
+                    const isDox = msg?.msgfile !=="" ? isDocxFile(msg?.msgfile) : false;
                     if (isPdf) {
                       console.log("fileUrl isPdf", fileUrl);
                     }
@@ -452,7 +457,7 @@ useEffect(() => {
                         >
                           <div
                             className={`p-3 ${
-                              !isAudio ? "max-w-[60%]" : "w-[40%]"
+                              !isAudio ? "max-w-[60%]" : isDox  ? "w-[80%]" : "w-[40%]"
                             } rounded-lg ${
                               msg?.messagefrom == user?.userid
                                 ? "bg-blue-100"
@@ -492,11 +497,29 @@ useEffect(() => {
                                     pageNumber={1}
                                     width={400}
                                     height={400}
+                                    renderTextLayer={false}
+                                    renderAnnotationLayer={false}
                                   />
                                 </Document>
                               </div>
-                            ) : (
-                              <p>{msg?.message}</p>
+                            ) : isDox ? <div className="w-full">
+                              <div className="flex justify-between px-4 items-center mb-2">
+                                  <span className="font-medium text-gray-600">Docx Preview</span>
+                                  <a
+                                    href={fileUrl}
+                                    download
+                                    className="text-blue-500 hover:underline text-sm"
+                                  >
+                                    Download Docx
+                                  </a>
+                                </div>
+                              <iframe
+                                src={`https://docs.google.com/gview?url=${fileUrl}&embedded=true`}
+                                className="w-full h-48 rounded-md"
+                                title="DOCX Preview"
+                              />
+                            </div> : (
+                              <p>{msg?.message === "" ? "empty Message" : msg?.message}</p>
                             )}
                           </div>
                         </div>
@@ -641,7 +664,8 @@ useEffect(() => {
                     type="button"
                     className="hover:text-red"
                     onClick={() => {
-                      setDocxFiles(null)
+                      setDocxFiles([]);
+                      setDocxHtml("")
                     }}
                   >
                     <RxCross1 size={30} />

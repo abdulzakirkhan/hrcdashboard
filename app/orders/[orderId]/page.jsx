@@ -119,8 +119,8 @@ const OrderDetail = ({ params }) => {
   const shared = useSelector((state) => state?.shared || {});
   const { serviceChargePercentage, vatFeePercentage } = shared;
   const serviceChargeFee = serviceChargePercentage;
-  const vatChargeFee = (order?.balanceamount * 20) / 100;
-  const processingFee = (order?.balanceamount * 4) / 100;
+  const vatChargeFee = (amount ? amount : order?.balanceamount * 20) / 100;
+  const processingFee = (amount ? amount : order?.balanceamount * 4) / 100;
   const totalAmount = Number(amount) + processingFee + vatChargeFee; // Total amount including all feeses
   const [addCardModal, setAddCardModal] = useState(false);
   const stripe = useStripe();
@@ -136,7 +136,7 @@ const OrderDetail = ({ params }) => {
       const consumableObj = getConsumableAmounts(
     setIsChecked ? walletAmount?.amount : 0,
     setIsChecked ? walletAmount?.rewardsamount : 0,
-    total
+    amount ? amount : total,
   );
 
   const handleViewModal = () => {
@@ -196,7 +196,7 @@ const OrderDetail = ({ params }) => {
   };
   // console.log("selected",order)
 
-
+console.log("amount",amount)
 
   // capture data as an image
   const generateSummaryImage = (data) => {
@@ -428,7 +428,7 @@ const handleSubmit = async (e) => {
                 <div className="flex justify-between items-center">
                   <span className="text-primary font-bold">Price :</span>
                   <span className="text-primary font-bold">
-                    {order.balanceamount}
+                    {Number(order.balanceamount).toFixed(3)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -436,7 +436,7 @@ const handleSubmit = async (e) => {
                     Processing Fee (4%) :
                   </span>
                   <span className="text-primary font-bold">
-                    {processingFee}
+                    {Number(processingFee).toFixed(3)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -444,7 +444,7 @@ const handleSubmit = async (e) => {
                     Vat Fee (20%) :
                   </span>
                   <span className="text-primary font-bold">
-                    {walletAmount?.currency} {vatChargeFee}
+                    {walletAmount?.currency} {Number(vatChargeFee).toFixed(3)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -453,7 +453,7 @@ const handleSubmit = async (e) => {
                   </span>
                   <span className="text-primary font-bold">
                     {walletAmount?.currency}{" "}
-                    {order?.balanceamount + processingFee + vatChargeFee}
+                    { (Number(order?.balanceamount) + Number(processingFee) + Number(vatChargeFee)).toFixed(4)}
                   </span>
                 </div>
               </div>
@@ -637,7 +637,8 @@ const handleSubmit = async (e) => {
               className="px-12 py-2 md:me-24 rounded-lg bg-primary text-white"
             >
               Pay {walletAmount?.currency}{" "}
-              {order?.balanceamount + processingFee + vatChargeFee}
+              {/* order?.balanceamount + processingFee + vatChargeFee */}
+              {amount ? amount : (Number(order?.balanceamount) + Number(processingFee) + Number(vatChargeFee)).toFixed(4)}
             </button>
           </div>
         </div>
@@ -782,7 +783,7 @@ const handleSubmit = async (e) => {
                             <div className="flex gap-6 mt-5 items-center">
                               <p className="text-sm text-grey">Price :</p>
                               <p className="text-grey">
-                                {order?.balanceamount}
+                                {order?.balanceamount ? Number(order?.balanceamount).toFixed(4) : "0.00"}
                               </p>
                             </div>
                             <div className="flex gap-6 mt-2 items-center">
@@ -790,13 +791,13 @@ const handleSubmit = async (e) => {
                                 Processing Fee (4%) :
                               </p>
                               <p className="text-grey">
-                                {walletAmount?.currency} {processingFee}
+                                {walletAmount?.currency} {Number(processingFee).toFixed(4)}
                               </p>
                             </div>
                             <div className="flex gap-6 mt-2 items-center">
                               <p className="text-sm text-grey">VAT (20%) :</p>
                               <p className="text-grey">
-                                {walletAmount?.currency} {vatChargeFee}
+                                {walletAmount?.currency} {Number(vatChargeFee).toFixed(4)}
                               </p>
                             </div>
                             <div className="flex gap-6 mt-2 items-center">
@@ -808,10 +809,12 @@ const handleSubmit = async (e) => {
                             <div className="flex justify-end font-bold gap-6 mt-2 items-center">
                               <p className="text-primary">Payable Amount:</p>
                               <p className="text-primary">
-                                {walletAmount?.currency}{" "}
-                                {order?.balanceamount +
-                                  processingFee +
-                                  vatChargeFee}
+                                {/* {walletAmount?.currency}{" "} */}
+                                {(
+                                  Number(order?.balanceamount) +
+                                  Number(processingFee) +
+                                  Number(vatChargeFee)
+                                ).toFixed(4)}
                               </p>
                             </div>
                           </div>

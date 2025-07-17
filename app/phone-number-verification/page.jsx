@@ -16,8 +16,8 @@
 import React, { useState } from "react";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-// import { getAuth, signInWithPhoneNumber, RecaptchaVerifier } from "firebase/auth";
-//import { app } from "@/lib/firebase"; // Your Firebase config file
+import { getAuth, signInWithPhoneNumber, RecaptchaVerifier } from "firebase/auth";
+import { app } from "@/lib/firebase";
 
 const page = () => {
   const [phone, setPhone] = useState("");
@@ -25,19 +25,19 @@ const page = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-//   const auth = getAuth(app);
+  const auth = getAuth(app);
 
 //   // 🔐 Initialize Recaptcha
-//   const setupRecaptcha = () => {
-//     if (!window.recaptchaVerifier) {
-//       window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-//         size: "invisible",
-//         callback: () => {
-//           console.log("Recaptcha verified");
-//         },
-//       });
-//     }
-//   };
+  const setupRecaptcha = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+        size: "invisible",
+        callback: () => {
+          console.log("Recaptcha verified");
+        },
+      });
+    }
+  };
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -56,22 +56,22 @@ const page = () => {
     //   return;
     // }
 
-    // try {
-    //   setLoading(true);
-    //   setupRecaptcha();
-    //   const appVerifier = window.recaptchaVerifier;
+    try {
+      setLoading(true);
+      setupRecaptcha();
+      const appVerifier = window.recaptchaVerifier;
 
-    //   const confirmation = await signInWithPhoneNumber(auth, phone, appVerifier);
-    //   window.confirmationResult = confirmation;
+      const confirmation = await signInWithPhoneNumber(auth, phone, appVerifier);
+      window.confirmationResult = confirmation;
 
-    //   setMessage("OTP has been sent. Please check your phone.");
-    //   // Redirect or show OTP input here
-    // } catch (err) {
-    //   console.error("Firebase error:", err);
-    //   setError("Failed to send OTP. Try again.");
-    // } finally {
-    //   setLoading(false);
-    // }
+      setMessage("OTP has been sent. Please check your phone.");
+      // Redirect or show OTP input here
+    } catch (err) {
+      console.error("Firebase error:", err);
+      setError("Failed to send OTP. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

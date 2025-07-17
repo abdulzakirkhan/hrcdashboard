@@ -74,12 +74,16 @@ const Page = () => {
   };
 
   const [link, setLink] = useState("");
+  const brachUrl = process.env.NEXT_PUBLIC_BRANCH_TEST_KEY;
 
+
+
+  console.log("brachUrl",brachUrl)
   const generateLink = async () => {
     try {
       // ✅ Initialize only once
       if (!branch.initialized) {
-        branch.init("key_test_isaHJcM7vjOUsaya7UAN0ogcCAbNFnot"); // Use your real public Branch key
+        branch.init(brachUrl); // Use your real public Branch key
       }
 
       // Branch data payload

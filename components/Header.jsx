@@ -1,6 +1,8 @@
 "use client";
 
+import { APP_NAMES } from "@/config/constants";
 import { logOut } from "@/redux/auth/authSlice";
+import { useGetRewardAmountsQuery } from "@/redux/rewards/rewardsApi";
 import { api } from "@/redux/service";
 import { useGetProfileQuery } from "@/redux/user/profileApi";
 import { ClipboardDocumentIcon, ShareIcon } from "@heroicons/react/24/outline";
@@ -10,8 +12,11 @@ import { useEffect, useRef, useState } from "react";
 import { HiSearch } from "react-icons/hi";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
+import branch from "branch-sdk";
+
 
 const Header = ({ profileName, profileImage }) => {
+  const [link, setLink] = useState("second");
   const router = useRouter();
   const dispatch = useDispatch();
   const [showModal, setShowModal] = useState(false);
@@ -22,7 +27,14 @@ const Header = ({ profileName, profileImage }) => {
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
+  const { data: rewardAmounts } = useGetRewardAmountsQuery();
+  
 
+    const invitationMsg = `I highly recommend the ${
+      APP_NAMES.HYBRID_RESEARCH_CENTER
+    } for research, thesis, and assignments - it's easy to use and more affordable than other platforms! If you're interested in trying it out, you can sign up using the link below and receive an amount of ${
+      rewardAmounts?.result?.referbyamount ?? "5"
+    } free credit in your native currency after placing your first order.`;
 
   const user = useSelector((state) => state.auth?.user);
   const { data: profileData } = useGetProfileQuery(user?.userid);
@@ -42,9 +54,7 @@ const Header = ({ profileName, profileImage }) => {
   const modalRef = useRef(null);
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(
-      "https://hybridresearchcenter.app.link/u0Ck3qhUNOb"
-    );
+    navigator.clipboard.writeText(link);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -123,6 +133,53 @@ const Header = ({ profileName, profileImage }) => {
   }, [pathname]);
 
   // console.log("suerData", userData);
+  const brachUrl = process.env.NEXT_PUBLIC_BRANCH_TEST_KEY;
+
+    const generateLink = async () => {
+      try {
+        // ✅ Initialize only once
+        if (!branch.initialized) {
+          branch.init(brachUrl); // Use your real public Branch key
+        }
+  
+        // Branch data payload
+        const data = {
+          canonicalIdentifier: "referral",
+          title: "Hybrid Research Center",
+          contentDescription: "Install this app using my referral link.",
+          contentMetadata: {
+            customMetadata: {
+              userId: user?.userid,
+            },
+          },
+        };
+  
+        // Link options
+        const linkData = {
+          data,
+          feature: "referral",
+          channel: "web",
+          // Optional: redirect URLs
+          $fallback_url: "https://www.hybridresearchcenter.com/",
+        };
+  
+        // Generate link
+        branch.link(linkData, (err, url) => {
+          if (err) {
+            console.error("Branch link error:", err);
+          } else {
+            console.log("Generated Branch link:", url);
+            setLink(url); // Set the generated link in state
+          }
+        });
+      } catch (error) {
+        console.error("Error generating Branch link:", error);
+      }
+    };
+  
+    useEffect(() => {
+      generateLink();
+    }, []);
   return (
     <>
       <header className="bg-[#312E81] px-2 md:px-0 fixed w-full z-50">
@@ -193,9 +250,10 @@ const Header = ({ profileName, profileImage }) => {
         </div>
       </header>
 
-      {showModal ? (
+      {showModal && (
+        <>
         <div
-          className="fixed inset-0 w-full h-full flex justify-center items-center"
+          className="fixed shadow-2xl z-50 inset-0 w-full h-full flex justify-center items-center"
           onClick={() => setShowModal(false)}
         >
           <div
@@ -214,7 +272,7 @@ const Header = ({ profileName, profileImage }) => {
                 <div className="-mt-12">
                   <input
                     type="text"
-                    value="https://hybridresearchcenter.app.link/u0Ck3qhUNOb"
+                    value={link}
                     readOnly
                     className="pr-16 ms-6 border border-gray-300 rounded-lg py-3 px-4"
                     style={{ width: "70%" }}
@@ -252,8 +310,7 @@ const Header = ({ profileName, profileImage }) => {
             </div>
           </div>
         </div>
-      ) : (
-        ""
+        </>
       )}
     </>
   );
