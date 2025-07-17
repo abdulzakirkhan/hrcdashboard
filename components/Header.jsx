@@ -5,7 +5,7 @@ import { logOut } from "@/redux/auth/authSlice";
 import { useGetRewardAmountsQuery } from "@/redux/rewards/rewardsApi";
 import { api } from "@/redux/service";
 import { useGetProfileQuery } from "@/redux/user/profileApi";
-import { ClipboardDocumentIcon, ShareIcon } from "@heroicons/react/24/outline";
+import { ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";

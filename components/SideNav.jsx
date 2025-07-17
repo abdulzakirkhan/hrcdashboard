@@ -9,7 +9,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { useGetProfileQuery } from "@/redux/user/profileApi";
-import { removeAdminFromURL } from "@/config/helpers";
 import { baseUrl } from "@/config";
 import { useDispatch } from "react-redux";
 import { logOut } from "@/redux/auth/authSlice";

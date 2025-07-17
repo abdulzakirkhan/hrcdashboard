@@ -18,8 +18,7 @@ import {
   useGetRewardPointsQuery,
   useGetRewardsHistoryQuery,
 } from "@/redux/rewards/rewardsApi";
-import { appNameCode } from "@/config";
-import { APP_NAME_CODES, APP_NAMES } from "@/config/constants";
+import { APP_NAMES } from "@/config/constants";
 
 import branch from "branch-sdk";
 const Page = () => {

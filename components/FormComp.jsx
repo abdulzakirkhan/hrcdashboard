@@ -1,4 +1,4 @@
-import { ErrorMessage, Formik } from 'formik'
+import { ErrorMessage, Form, Formik } from 'formik'
 import Image from 'next/image';
 import React from 'react'
 

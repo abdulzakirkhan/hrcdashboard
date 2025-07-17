@@ -6,7 +6,6 @@ import Image from "next/image";
 import React, { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { HiEye, HiEyeOff } from "react-icons/hi";
-import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
 import * as Yup from "yup";
 

@@ -15,7 +15,6 @@ import {
   useMakeWalletPaymentMutation,
 } from "@/redux/payments/paymentApi";
 import {
-  CardElement,
   useStripe,
   useElements,
   CardNumberElement,

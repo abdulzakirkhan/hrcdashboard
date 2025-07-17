@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { useFormik } from "formik"; // Import Formik
 import * as Yup from "yup"; // Import Yup for validation
-import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { motion } from "framer-motion"; // Import framer-motion for animations
 
 import { FaArrowLeftLong } from "react-icons/fa6";
