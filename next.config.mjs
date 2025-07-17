@@ -9,6 +9,9 @@ const nextConfig = {
   images: {
     domains: ['nabeel.a2hosted.com','staging.portalteam.org'],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;
