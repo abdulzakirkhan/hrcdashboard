@@ -14,7 +14,7 @@ module.exports = {
     'next/core-web-vitals',              // Next.js + web vitals
     'plugin:@typescript-eslint/recommended', // TypeScript rules
     'plugin:react-hooks/recommended',    // React hooks best practices
-    // 'plugin:prettier/recommended',       // Prettier integration
+    'plugin:prettier/recommended',       // Prettier integration
   ],
   rules: {
     // Add or override rules here
