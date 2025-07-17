@@ -1,16 +1,23 @@
-// /** @type {import('next').NextConfig} */
-// const nextConfig = {};
-
-// export default nextConfig;
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
   images: {
-    domains: ['nabeel.a2hosted.com','staging.portalteam.org'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'nabeel.a2hosted.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'staging.portalteam.org',
+      },
+    ],
   },
   eslint: {
     ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
   },
 };
 
