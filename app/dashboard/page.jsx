@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Cards from "@/components/Cards";
 import { motion } from "framer-motion";
-// import { cardsData } from "../data";
 import Link from "next/link";
 import { useSelector } from "react-redux";
 import {

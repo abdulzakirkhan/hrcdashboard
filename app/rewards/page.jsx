@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { rewardsData } from "../data";
 import Image from "next/image";
 import {
   CheckIcon,

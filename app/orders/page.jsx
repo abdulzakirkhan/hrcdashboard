@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import Orders from "@/components/Orders";
-// import { ordersData } from '../data'
 import { motion } from "framer-motion";
 import OrderCard from "@/components/OrderCard";
 import { useRouter } from "next/navigation";

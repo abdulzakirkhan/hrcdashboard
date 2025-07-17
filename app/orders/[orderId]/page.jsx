@@ -2,7 +2,6 @@
 
 import { FaArrowLeftLong } from "react-icons/fa6";
 import React, { useEffect, useState } from "react";
-// import { ordersData } from '../../data';
 import Image from "next/image";
 import { RiBankCardFill } from "react-icons/ri";
 import Link from "next/link";
