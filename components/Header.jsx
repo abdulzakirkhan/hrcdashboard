@@ -16,7 +16,7 @@ import branch from "branch-sdk";
 
 
 const Header = ({ profileName, profileImage }) => {
-  const [link, setLink] = useState("second");
+  const [link, setLink] = useState("");
   const router = useRouter();
   const dispatch = useDispatch();
   const [showModal, setShowModal] = useState(false);
