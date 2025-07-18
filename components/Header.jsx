@@ -27,7 +27,6 @@ const Header = ({ profileName, profileImage }) => {
     setIsDropdownOpen(!isDropdownOpen);
   };
   const { data: rewardAmounts } = useGetRewardAmountsQuery();
-  const Branch = dynamic(() => import("branch-sdk"), { ssr: false });
 
     const invitationMsg = `I highly recommend the ${
       APP_NAMES.HYBRID_RESEARCH_CENTER
