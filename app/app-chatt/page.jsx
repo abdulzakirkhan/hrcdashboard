@@ -222,6 +222,8 @@ useEffect(() => {
     setSelectedImage();
     setPayloadImages([]);
     setSelectPdf([]);
+    setDocxFiles([])
+    setDocxHtml("")
   };
 
   const [seenAllMessages] = useSeenAllMessagesMutation();
@@ -319,6 +321,7 @@ useEffect(() => {
     channel.bind_global((eventName, data) => {
       // console.log("📨 New message received:", eventName, data);
       let message = data.message;
+      console.log("message",message)
       const isAudio =
         typeof message?.msg === "string" &&
         message.msg.startsWith("http") &&
@@ -397,8 +400,9 @@ useEffect(() => {
   if (!value || typeof value !== "string") return false;
   return /\.docx$/i.test(value.trim());
 };
-  console.log("getAll", getAllChats);
+  console.log("getAll0", messages);
 
+  
   return (
     <>
       <section className="mt-20">
@@ -655,9 +659,7 @@ useEffect(() => {
 
             {docxHtml && (
               <div
-                className={`absolute ${
-                  selectedImage?.length === 1 ? "w-1/3" : "w-1/2"
-                } h-44 -top-52 left-[20%] bg-white p-2 rounded-lg shadow-lg`}
+                className={`absolute w-1/2 h-52 overflow-auto  -top-64 left-[20%] bg-white p-2 rounded-lg shadow-lg`}
               >
                 <div className="text-end">
                   <button
@@ -672,7 +674,7 @@ useEffect(() => {
                   </button>
                 </div>
                 <div
-                  className="border p-4 rounded max-h-[400px] overflow-y-auto"
+                  className="border p-4 rounded h-full"
                   dangerouslySetInnerHTML={{ __html: docxHtml }}
                 />
               </div>
