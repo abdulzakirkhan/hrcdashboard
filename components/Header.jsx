@@ -131,54 +131,37 @@ const Header = ({ profileName, profileImage }) => {
     setIsDropdownOpen(false);
   }, [pathname]);
 
-  // console.log("suerData", userData);
-  const brachUrl = process.env.NEXT_PUBLIC_BRANCH_TEST_KEY;
-
+   const brachUrl = process.env.NEXT_PUBLIC_BRANCH_TEST_KEY;
+  
+  useEffect(() => {
     const generateLink = async () => {
       try {
-        // ✅ Initialize only once
-        if (!Branch.initialized) {
-          Branch.init(brachUrl); // Use your real public Branch key
+        if (!brachUrl) {
+          console.error("Branch key missing!");
+          return;
         }
-  
-        // Branch data payload
+        const branchLib = (await import("branch-sdk")).default || (await import("branch-sdk"));
+        if (!branchLib.initialized) {
+          branchLib.init(brachUrl);
+        }
+
         const data = {
-          canonicalIdentifier: "referral",
-          title: "Hybrid Research Center",
-          contentDescription: "Install this app using my referral link.",
-          contentMetadata: {
-            customMetadata: {
-              userId: user?.userid,
-            },
-          },
-        };
-  
-        // Link options
-        const linkData = {
-          data,
-          feature: "referral",
-          channel: "web",
-          // Optional: redirect URLs
-          $fallback_url: "https://www.hybridresearchcenter.com/",
-        };
-  
-        // Generate link
-        Branch.link(linkData, (err, url) => {
-          if (err) {
-            console.error("Branch link error:", err);
-          } else {
-            console.log("Generated Branch link:", url);
-            setLink(url); // Set the generated link in state
-          }
-        });
+        canonicalIdentifier: "referral",
+        title: "Hybrid Research Center",
+        contentDescription: "Install this app using my referral link.",
+        contentMetadata: { customMetadata: { userId: user?.userid } },
+      };
+      const linkData = { data, feature: "referral", channel: "web", $fallback_url: "https://www.hybridresearchcenter.com/" };
+
+      branchLib.link(linkData, (err, url) => {
+        if (!err && url) setLink(url);
+      });
       } catch (error) {
-        console.error("Error generating Branch link:", error);
+       console.log(error)
       }
-    };
-  
-    useEffect(() => {
-      generateLink();
-    }, []);
+    }
+    generateLink()
+  }, [])
   return (
     <>
       <header className="bg-[#312E81] px-2 md:px-0 fixed w-full z-50">
