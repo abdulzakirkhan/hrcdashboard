@@ -73,6 +73,8 @@ const Page = () => {
   const [link, setLink] = useState("");
   const brachUrl = process.env.NEXT_PUBLIC_BRANCH_TEST_KEY;
 
+  console.log("totalRewardAmounts",totalRewardAmounts)
+  console.log("walletAmount",walletAmount)
 
 
 
@@ -202,7 +204,7 @@ const Page = () => {
                       Total Earned:
                     </span>
                     <span className="ml-2 text-2xl font-bold text-primary">
-                      {Number(totalRewardAmounts).toFixed(2)} USD
+                      {totalRewardAmounts > 0 ? Number(totalRewardAmounts).toFixed(2) : "0.00"} {rewardPoints?.result?.currency ? rewardPoints?.result?.currency : walletAmount?.currency}
                     </span>
                   </div>
                 </div>
@@ -282,7 +284,7 @@ const Page = () => {
                 className="mx-auto"
               />
               <h2 className="text-3xl font-bold text-gray-900 mt-6">
-                Invite Friends & Earn ₹10
+                Invite Friends & Earn 10
               </h2>
               <p className="text-gray-600 mt-2">
                 Share your unique link with friends
@@ -346,20 +348,24 @@ const Page = () => {
 
             <div className="space-y-6 max-w-3xl mx-auto">
               <div className="p-6 bg-gray-50 rounded-xl">
-                <h3 className="text-lg font-semibold mb-4">How it works</h3>
                 <div className="space-y-4">
-                  <div className="flex items-start">
-                    <CheckIcon className="w-6 h-6 text-green-600 mt-1 mr-3" />
-                    <p>
-                      Your friend gets $5 credit when they sign up using your
-                      link and place their first order
-                    </p>
+                  <div className="border-2 border-gray-400 p-4 rounded-md">
+                    <h3>They Get</h3>
+                    <div className="flex items-start mt-5">
+                      <CheckIcon className="w-6 h-6 text-green-600 mr-3" />
+                      <p>
+                        A free 5 Credit in Thier native currency when they sign up using your referral link and place their first order.
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-start">
-                    <CheckIcon className="w-6 h-6 text-green-600 mt-1 mr-3" />
-                    <p>
-                      You get ₹10 credit when they complete their first order
-                    </p>
+                  <div className="border-2 border-gray-400 p-4 rounded-md">
+                    <h3>You Get</h3>
+                    <div className="flex items-start mt-5">
+                      <CheckIcon className="w-6 h-6 text-green-600 mt-1 mr-3" />
+                      <p>
+                        A free 10 credit when they sign up using your referral link and place their first order.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

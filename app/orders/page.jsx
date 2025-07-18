@@ -43,7 +43,7 @@ const OrdersPage = () => {
     }));
   };
   const ordersData = getAllOrders?.result?.orderAll || [];
-  const [allOrders, setAllOrders] = useState([])
+  const [allOrders, setAllOrders] = useState([]);
   const filteredOrders = getAllOrders?.result?.orderAll?.filter((order) => {
     const { completed, paid, unpaid, partiallyPaid } = filters;
 
@@ -82,7 +82,29 @@ const OrdersPage = () => {
 
 
 
+  // --- PAGINATION LOGIC ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
 
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+
+    useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, ordersData]);
+
+
+  
   return (
     <>
       <section className="mt-12">
@@ -157,15 +179,119 @@ const OrdersPage = () => {
               )}
             </div>
           </div>
-          <div className="grid md:grid-cols-12 lg:w-full gap-12">
-            <Orders ordersData={filteredOrders} />
-          </div>
+           <div className="grid md:grid-cols-12 lg:w-full gap-12">
+          {currentOrders?.length > 0 ? (
+            currentOrders.map((order, index) => <Orders order={order} key={index} />)
+          ) : (
+            <div className="col-span-12 flex flex-col justify-center items-center">
+              <Image src={"/orders/noOrders.svg"} width={382} height={328} alt="" />
+              <h2 className="text-black">You have no orders yet.</h2>
+              <p>Order now to have it show up in your list and stay updated.</p>
+            </div>
+          )}
+        </div>
 
-          {/* <div className="flex items-center flex-wrap gap-6">
-          {ordersData.map((order,index) => (
-            <OrderCard key={index} order={order}  />
-          ))}
-        </div> */}
+
+        {/* Pagination Controls */}
+{totalPages > 1 && (
+  <div className="flex justify-center items-center gap-2 mt-6 flex-wrap">
+    {/* Previous Button */}
+    <button
+      className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+      onClick={handlePrevPage}
+      disabled={currentPage === 1}
+    >
+      Previous
+    </button>
+
+    {/* Page Numbers */}
+    {Array.from({ length: totalPages }).map((_, index) => {
+      const page = index + 1;
+
+      // Show all pages if there are less than 10
+      if (totalPages <= 10) {
+        return (
+          <button
+            key={page}
+            onClick={() => setCurrentPage(page)}
+            className={`px-3 py-1 rounded ${
+              currentPage === page ? "bg-blue-500 text-white" : "bg-gray-100 hover:bg-gray-200"
+            }`}
+          >
+            {page}
+          </button>
+        );
+      }
+
+      // For long pagination, only show first, last, current, and neighbors
+      if (
+        page === 1 ||
+        page === totalPages ||
+        (page >= currentPage - 1 && page <= currentPage + 1)
+      ) {
+        return (
+          <button
+            key={page}
+            onClick={() => setCurrentPage(page)}
+            className={`px-3 py-1 rounded ${
+              currentPage === page ? "bg-gray-800 text-white border-gray-800" : "bg-gray-100 hover:bg-gray-200"
+            }`}
+          >
+            {page}
+          </button>
+        );
+      }
+
+      // Add ellipses (...) for skipped pages
+      if (
+        page === 2 && currentPage > 3 || 
+        page === totalPages - 1 && currentPage < totalPages - 2
+      ) {
+        return (
+          <span key={page} className="px-2">...</span>
+        );
+      }
+
+      return null;
+    })}
+
+    {/* Next Button */}
+    <button
+      className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+      onClick={handleNextPage}
+      disabled={currentPage === totalPages}
+    >
+      Next
+    </button>
+  </div>
+)}
+
+
+
+        
+          {/* <div className="grid md:grid-cols-12 lg:w-full gap-12">
+            {filteredOrders?.length > 0 ? (
+              filteredOrders?.map((order, index) => (
+                <Orders order={order} key={index} />
+              ))
+            ) : (
+              <div className="col-span-12">
+                <div className="flex flex-col justify-center items-center">
+                  <Image
+                    src={"/orders/noOrders.svg"}
+                    width={382}
+                    height={328}
+                    alt=""
+                  />
+                  <h2 className="text-[#000000]">You have no orders yet.</h2>
+                  <p>
+                    Order now to have it show up in your list and stay updated
+                    on its payment_status.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div> */}
         </div>
       </section>
     </>

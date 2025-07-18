@@ -114,6 +114,7 @@ const OrderDetail = ({ params }) => {
   const handleTabSwitch = (tab, mode) => {
     setActiveTab(tab);
     handleCardSelect(mode);
+    setAmount()
   };
   const shared = useSelector((state) => state?.shared || {});
   const { serviceChargePercentage, vatFeePercentage } = shared;
@@ -657,7 +658,10 @@ const handleSubmit = async (e) => {
       {showCheckout ? (
         <div className="mt-20">
           <button
-            onClick={() => setShowCheckout(false)}
+            onClick={() => {
+              setShowCheckout(false);
+              handleCardSelect("");
+            }}
             className="flex my-4 items-center gap-2 hover:text-[#312E81]"
           >
             <FaArrowLeftLong /> Back
@@ -728,18 +732,18 @@ const handleSubmit = async (e) => {
                           <div className="flex gap-6 mt-5 items-center">
                             <p className="text-sm text-grey">Price :</p>
                             <p className="text-grey">
-                              {walletAmount?.currency} {order?.balanceamount}
+                              {walletAmount?.currency} {order?.balanceamount && Number(order?.balanceamount).toFixed(3)}
                             </p>
                           </div>
                           <div className="flex gap-6 mt-2 items-center">
                             <p className="text-sm text-grey">
                               Processing Fee (4%) :
                             </p>
-                            <p className="text-grey">$0.04</p>
+                            <p className="text-grey">{Number(vatChargeFee).toFixed(3)}</p>
                           </div>
                           <div className="flex gap-6 mt-2 items-center">
                             <p className="text-sm text-grey">VAT (20%) :</p>
-                            <p className="text-grey">$ {vatChargeFee}</p>
+                            <p className="text-grey">$ {Number(vatChargeFee).toFixed(3)}</p>
                           </div>
                           <div className="flex gap-6 mt-2 items-center">
                             <p className="text-sm text-grey">Payment Method:</p>
@@ -749,9 +753,7 @@ const handleSubmit = async (e) => {
                             <p className="text-primary">Payable Amount:</p>
                             <p className="text-primary">
                               {walletAmount?.currency}{" "}
-                              {order?.balanceamount +
-                                processingFee +
-                                vatChargeFee}
+                              {(Number(order?.balanceamount) + Number(processingFee) + Number(vatChargeFee)).toFixed(3)}
                             </p>
                           </div>
                         </div>
@@ -865,7 +867,7 @@ const handleSubmit = async (e) => {
                     </p>
 
                     <div
-                      className={`flex justify-between border-2 h-48 rounded-xl p-5 ${
+                      className={`flex justify-between border-2 h-56 rounded-xl p-5 ${
                         selectedCard === "wallet" ? "border-blue-500" : ""
                       }`}
                       // onClick={() => handleCardSelect("wallet")}
@@ -878,7 +880,7 @@ const handleSubmit = async (e) => {
                         <div className="flex items-center gap-2">
                           <span className="text-green">Available:</span>
                           <span className="text-green">
-                            {order?.totalPrice}
+                            {Number(order?.totalPrice).toFixed(3)}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -927,7 +929,7 @@ const handleSubmit = async (e) => {
 
                   <div className="md:py-8 w-full">
                     <div
-                      className={`md:py-8 w-full border-2 h-48 rounded-xl px-5 py-3 ${
+                      className={`md:py-8 w-full border-2 h-56 rounded-xl px-5 py-3 ${
                         selectedCard === "bank" ? "border-blue-500" : ""
                       }`}
                       onClick={() => handleCardSelect("bank")}
@@ -945,7 +947,7 @@ const handleSubmit = async (e) => {
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm">Price:</span>
                           <span className="text-grey text-sm">
-                            {order?.balanceamount}
+                            {Number(order?.balanceamount).toFixed(3)}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -953,18 +955,18 @@ const handleSubmit = async (e) => {
                             Processing fee (4%):
                           </span>
                           <span className="text-grey text-sm">
-                            $ {processingFee}
+                             {Number(processingFee).toFixed(2)}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm line-through">
                             VAT (20%):
                           </span>
-                          <span className="text-grey text-sm">$0.40</span>
+                          <span className="text-grey text-sm">{Number(vatChargeFee).toFixed(3)}</span>
                         </div>
                         <div className="text-end mt-3">
                           <span className="text-lg text-primary">
-                            Total : {order.balanceamount + processingFee}
+                            Total : {parseFloat((Number(order.balanceamount) + Number(processingFee)).toFixed(3))}
                           </span>
                         </div>
                       </div>
@@ -973,7 +975,7 @@ const handleSubmit = async (e) => {
 
                   <div className="md:py-8 w-full">
                     <div
-                      className={`md:py-8 w-full border-2 h-48 rounded-xl px-5 py-3 ${
+                      className={`md:py-8 w-full border-2 min-h-48 rounded-xl px-5 py-3 ${
                         selectedCard === "stripe" ? "border-blue-500" : ""
                       }`}
                       onClick={() => handleCardSelect("stripe")}
@@ -1018,7 +1020,7 @@ const handleSubmit = async (e) => {
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm">Price:</span>
                           <span className="text-grey text-sm">
-                            {walletAmount?.currency} {order?.balanceamount}
+                            {walletAmount?.currency} {Number(order?.balanceamount).toFixed(3)}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -1026,21 +1028,19 @@ const handleSubmit = async (e) => {
                             Processing fee (4%):
                           </span>
                           <span className="text-grey text-sm">
-                            {walletAmount?.currency} {processingFee}
+                            {walletAmount?.currency} {processingFee ? Number(processingFee).toFixed(2) : "0.00"}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-grey text-sm">VAT (20%):</span>
                           <span className="text-grey text-sm">
-                            {walletAmount?.currency} {vatChargeFee}
+                            {walletAmount?.currency} {Number(vatChargeFee).toFixed(3)}
                           </span>
                         </div>
                         <div className="text-end mt-3">
                           <span className="text-lg text-primary">
                             Total : {walletAmount?.currency}{" "}
-                            {order?.balanceamount +
-                              processingFee +
-                              vatChargeFee}
+                            {parseFloat((Number(order?.balanceamount) + Number(processingFee) + Number(vatChargeFee)).toFixed(3))}
                           </span>
                         </div>
                       </div>
@@ -1068,9 +1068,9 @@ const handleSubmit = async (e) => {
                   style={{
                     height: `${order?.payment_status === 0 ? "300px" : ""}`,
                     backgroundImage: `url(${
-                      order?.payment_status === 1
+                      Number(order?.completepercentage) === 100
                         ? "/orders/banner.svg"
-                        : order?.payment_status === 2
+                        : Number(order?.completepercentage) > 0
                         ? "/orders/yellobanner.svg"
                         : "/orders/red.svg"
                     })`,
@@ -1117,11 +1117,11 @@ const handleSubmit = async (e) => {
                                 r="13"
                                 fill="none"
                                 className={`stroke-current ${
-                                  order?.payment_status === 1
+                                  Number(order?.completepercentage) === 100
                                     ? "text-[#3BB537]"
-                                    : order?.payment_status === 2
+                                    : Number(order?.completepercentage) > 0
                                     ? "text-yellow"
-                                    : order?.payment_status === 0
+                                    : Number(order?.completepercentage) === 0
                                     ? "text-grey"
                                     : ""
                                 } dark:text-blue-500`}
@@ -1139,11 +1139,7 @@ const handleSubmit = async (e) => {
                               } md:right-10 transform -translate-y-1/2 -translate-x-1/2`}
                             >
                               <span className="text-center text-2xl font-bold text-black dark:text-blue-500">
-                                {order?.payment_status === 2
-                                  ? 50
-                                  : order?.payment_status === 1
-                                  ? 100
-                                  : 0}
+                                {order?.completepercentage}
                                 %
                               </span>
                             </div>
