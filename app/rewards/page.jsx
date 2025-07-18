@@ -19,8 +19,7 @@ import {
   useGetRewardsHistoryQuery,
 } from "@/redux/rewards/rewardsApi";
 import { APP_NAMES } from "@/config/constants";
-
-import branch from "branch-sdk";
+import dynamic from "next/dynamic";
 const Page = () => {
   const { user } = useSelector((state) => state.auth) || {};
   const [showInviteForm, setShowInviteForm] = useState(false);
@@ -31,7 +30,7 @@ const Page = () => {
   currencyFormData.append("clientid", user?.userid);
   const { data: userDataCurrencies } =
     useGetUserCurrencyAndCountryQuery(currencyFormData);
-
+ const Branch = dynamic(() => import("branch-sdk"), { ssr: false });
   const {
     data: walletAmount,
     isLoading: walletAmountLoading,
@@ -80,8 +79,8 @@ const Page = () => {
   const generateLink = async () => {
     try {
       // ✅ Initialize only once
-      if (!branch.initialized) {
-        branch.init(brachUrl); // Use your real public Branch key
+      if (!Branch.initialized) {
+        Branch.init(brachUrl); // Use your real public Branch key
       }
 
       // Branch data payload
@@ -138,6 +137,7 @@ const Page = () => {
   // console.log("link", link);
   const shareWithFacebook = () => {
     try {
+      if (typeof window === "undefined") return;
       const facebookShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
         link
       )}&quote=${encodeURIComponent(invitationMsg)}`;
@@ -149,6 +149,7 @@ const Page = () => {
 
   const shareWithWhatsapp = () => {
     try {
+      if (typeof window === "undefined") return;
       const message = `${invitationMsg}\n\n${link}`;
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, "_blank");
@@ -158,6 +159,7 @@ const Page = () => {
   };
   const shareWithInstagram = () => {
     try {
+      if (typeof window === "undefined") return;
       const text = `${invitationMsg}\n\n${link}`;
       navigator.clipboard.writeText(text);
       // alert('Invitation copied to clipboard! Open Instagram and paste it in your story or post.');
@@ -170,6 +172,7 @@ const Page = () => {
 
   const shareWithX = () => {
     try {
+      if (typeof window === "undefined") return;
       const tweetText = `${invitationMsg}\n\n${link}`;
       const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
         tweetText
@@ -181,6 +184,7 @@ const Page = () => {
   };
 
   const copyToClipboard = () => {
+    if (typeof navigator === "undefined") return;
     navigator.clipboard.writeText(`${invitationMsg}\n\n${link}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

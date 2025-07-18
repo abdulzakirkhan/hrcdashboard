@@ -12,7 +12,6 @@ import { useEffect, useRef, useState } from "react";
 import { HiSearch } from "react-icons/hi";
 import { useSelector } from "react-redux";
 import { useDispatch } from "react-redux";
-import branch from "branch-sdk";
 
 
 const Header = ({ profileName, profileImage }) => {
@@ -28,7 +27,7 @@ const Header = ({ profileName, profileImage }) => {
     setIsDropdownOpen(!isDropdownOpen);
   };
   const { data: rewardAmounts } = useGetRewardAmountsQuery();
-  
+  const Branch = dynamic(() => import("branch-sdk"), { ssr: false });
 
     const invitationMsg = `I highly recommend the ${
       APP_NAMES.HYBRID_RESEARCH_CENTER
@@ -138,8 +137,8 @@ const Header = ({ profileName, profileImage }) => {
     const generateLink = async () => {
       try {
         // ✅ Initialize only once
-        if (!branch.initialized) {
-          branch.init(brachUrl); // Use your real public Branch key
+        if (!Branch.initialized) {
+          Branch.init(brachUrl); // Use your real public Branch key
         }
   
         // Branch data payload
@@ -164,7 +163,7 @@ const Header = ({ profileName, profileImage }) => {
         };
   
         // Generate link
-        branch.link(linkData, (err, url) => {
+        Branch.link(linkData, (err, url) => {
           if (err) {
             console.error("Branch link error:", err);
           } else {
