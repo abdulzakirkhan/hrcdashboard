@@ -6,6 +6,7 @@ import { useGetRewardAmountsQuery } from "@/redux/rewards/rewardsApi";
 import { api } from "@/redux/service";
 import { useGetProfileQuery } from "@/redux/user/profileApi";
 import { ClipboardDocumentIcon } from "@heroicons/react/24/outline";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -27,6 +28,7 @@ const Header = ({ profileName, profileImage }) => {
     setIsDropdownOpen(!isDropdownOpen);
   };
   const { data: rewardAmounts } = useGetRewardAmountsQuery();
+  const Branch = dynamic(() => import("branch-sdk"), { ssr: false });
 
     const invitationMsg = `I highly recommend the ${
       APP_NAMES.HYBRID_RESEARCH_CENTER
@@ -130,37 +132,54 @@ const Header = ({ profileName, profileImage }) => {
     setIsDropdownOpen(false);
   }, [pathname]);
 
-   const brachUrl = process.env.NEXT_PUBLIC_BRANCH_TEST_KEY;
-  
-  useEffect(() => {
+  // console.log("suerData", userData);
+  const brachUrl = process.env.NEXT_PUBLIC_BRANCH_TEST_KEY;
+
     const generateLink = async () => {
       try {
-        if (!brachUrl) {
-          console.error("Branch key missing!");
-          return;
+        // ✅ Initialize only once
+        if (!Branch.initialized) {
+          Branch.init(brachUrl); // Use your real public Branch key
         }
-        const branchLib = (await import("branch-sdk")).default || (await import("branch-sdk"));
-        if (!branchLib.initialized) {
-          branchLib.init(brachUrl);
-        }
-
+  
+        // Branch data payload
         const data = {
-        canonicalIdentifier: "referral",
-        title: "Hybrid Research Center",
-        contentDescription: "Install this app using my referral link.",
-        contentMetadata: { customMetadata: { userId: user?.userid } },
-      };
-      const linkData = { data, feature: "referral", channel: "web", $fallback_url: "https://www.hybridresearchcenter.com/" };
-
-      branchLib.link(linkData, (err, url) => {
-        if (!err && url) setLink(url);
-      });
+          canonicalIdentifier: "referral",
+          title: "Hybrid Research Center",
+          contentDescription: "Install this app using my referral link.",
+          contentMetadata: {
+            customMetadata: {
+              userId: user?.userid,
+            },
+          },
+        };
+  
+        // Link options
+        const linkData = {
+          data,
+          feature: "referral",
+          channel: "web",
+          // Optional: redirect URLs
+          $fallback_url: "https://www.hybridresearchcenter.com/",
+        };
+  
+        // Generate link
+        Branch.link(linkData, (err, url) => {
+          if (err) {
+            console.error("Branch link error:", err);
+          } else {
+            console.log("Generated Branch link:", url);
+            setLink(url); // Set the generated link in state
+          }
+        });
       } catch (error) {
-       console.log(error)
+        console.error("Error generating Branch link:", error);
       }
-    }
-    generateLink()
-  }, [])
+    };
+  
+    useEffect(() => {
+      generateLink();
+    }, []);
   return (
     <>
       <header className="bg-[#312E81] px-2 md:px-0 fixed w-full z-50">

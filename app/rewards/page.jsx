@@ -75,37 +75,54 @@ const Page = () => {
 
 
 
- 
+  console.log("brachUrl",brachUrl)
+  const generateLink = async () => {
+    try {
+      // ✅ Initialize only once
+      if (!Branch.initialized) {
+        Branch.init(brachUrl); // Use your real public Branch key
+      }
 
-  useEffect(() => {
-    const generateLink = async () => {
-      try {
-        if (!brachUrl) {
-          console.error("Branch key missing!");
-          return;
-        }
-        const branchLib = (await import("branch-sdk")).default || (await import("branch-sdk"));
-        if (!branchLib.initialized) {
-          branchLib.init(brachUrl);
-        }
-
-        const data = {
+      // Branch data payload
+      const data = {
         canonicalIdentifier: "referral",
         title: "Hybrid Research Center",
         contentDescription: "Install this app using my referral link.",
-        contentMetadata: { customMetadata: { userId: user?.userid } },
+        contentMetadata: {
+          customMetadata: {
+            userId: user?.userid,
+          },
+        },
       };
-      const linkData = { data, feature: "referral", channel: "web", $fallback_url: "https://www.hybridresearchcenter.com/" };
 
-      branchLib.link(linkData, (err, url) => {
-        if (!err && url) setLink(url);
+      // Link options
+      const linkData = {
+        data,
+        feature: "referral",
+        channel: "web",
+        // Optional: redirect URLs
+        $fallback_url: "https://www.hybridresearchcenter.com/",
+      };
+
+      // Generate link
+      branch.link(linkData, (err, url) => {
+        if (err) {
+          console.error("Branch link error:", err);
+        } else {
+          console.log("Generated Branch link:", url);
+          setLink(url); // Set the generated link in state
+        }
       });
-      } catch (error) {
-       console.log(error)
-      }
+    } catch (error) {
+      console.error("Error generating Branch link:", error);
     }
-    generateLink()
-  }, [])
+  };
+
+  useEffect(() => {
+    generateLink();
+  }, []);
+
+
   
 
   useEffect(() => {
