@@ -132,9 +132,6 @@ const [docxHtml, setDocxHtml] = useState("");
       (file) => file.type === "application/pdf"
     );
 
-    console.log("📂 All Files:", fileArray);
-    console.log("🖼️ Image Files:", imageFiles);
-    console.log("📄 Non-image Files (e.g., PDF):");
 
     if (imageFiles.length > 0) {
       const imagePreview = imageFiles.map((file) => ({
@@ -173,10 +170,9 @@ useEffect(() => {
     reader.readAsArrayBuffer(docxFiles[0]);
   }
 }, [docxFiles]);
-  console.log("selectedDocument", selectedDocmunet);
-  // payloadImages.map((file) => {
-  //   console.log("📂 file:", file);
-  // });
+
+
+
   // Add a new message to the chat
   const handleSendMessage = async () => {
     setSearchFilterData(undefined);
@@ -207,9 +203,7 @@ useEffect(() => {
     }
 
     // stoping api call
-    for (let [key, value] of body.entries()) {
-      console.log(`${key}:`, value);
-    }
+   
 
     // return;
     const res = await insertMesage(body);
@@ -253,7 +247,6 @@ useEffect(() => {
     }
   };
 
-  console.log("getAllChats:", getAllChats);
 
   const handleVoiceRecording = async () => {
     if (!isVoiceStart) {
@@ -288,7 +281,6 @@ useEffect(() => {
       setIsVoiceStart(false);
     }
   };
-  // console.log("recordedBlog",recordedBlob)
 
   useEffect(() => {
     if (getAllChats?.result) {
@@ -319,19 +311,14 @@ useEffect(() => {
     });
 
     channel.bind_global((eventName, data) => {
-      // console.log("📨 New message received:", eventName, data);
       let message = data.message;
-      console.log("message",message)
       const isAudio =
         typeof message?.msg === "string" &&
         message.msg.startsWith("http") &&
         message?.type === "audio";
-      console.log("message :", message);
       let msgfrom = message?.msgfrom;
       let responseTo = message?.respondTo;
-      if (isAudio) {
-        console.log("🔊 Received audio message URL:", message.msg);
-      }
+    
       let obj = {
         id: message?.mid,
         message: message?.msg,
@@ -400,7 +387,6 @@ useEffect(() => {
   if (!value || typeof value !== "string") return false;
   return /\.docx$/i.test(value.trim());
 };
-  console.log("getAll0", messages);
 
   
   return (
@@ -429,7 +415,6 @@ useEffect(() => {
                 ? "Yesterday"
                 : format(parsedDate, "dd MMM yyyy");
 
-              // console.log("baseUrl+msg?.message",)
               return (
                 <div key={date + Math.random()}>
                   {/* 🗓️ Date separator */}
@@ -447,9 +432,6 @@ useEffect(() => {
 
                     const isPdf = msg?.msgfile !=="" ? isPdfFile(msg?.msgfile) : false;
                     const isDox = msg?.msgfile !=="" ? isDocxFile(msg?.msgfile) : false;
-                    if (isPdf) {
-                      console.log("fileUrl isPdf", fileUrl);
-                    }
                     return (
                       <div key={msg?.id} className="mb-4 p-4">
                         <div
