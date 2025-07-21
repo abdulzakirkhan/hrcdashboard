@@ -73,8 +73,6 @@ const Page = () => {
   const [link, setLink] = useState("");
   const brachUrl = process.env.NEXT_PUBLIC_BRANCH_TEST_KEY;
 
-  console.log("totalRewardAmounts",totalRewardAmounts)
-  console.log("walletAmount",walletAmount)
 
 
 
@@ -85,7 +83,6 @@ const Page = () => {
       try {
         const key = process.env.NEXT_PUBLIC_BRANCH_TEST_KEY;
         if (!key && !brachUrl) {
-          console.error("Branch key missing!");
           return;
         }
 
@@ -126,7 +123,6 @@ const Page = () => {
     rewardAmounts?.result?.referbyamount ?? "5"
   } free credit in your native currency after placing your first order.`;
 
-  // console.log("link", link);
   const shareWithFacebook = () => {
     try {
       if (typeof window === "undefined") return;

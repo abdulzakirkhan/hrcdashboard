@@ -190,13 +190,10 @@ const OrderDetail = ({ params }) => {
     } catch (err) {
       // Fallback for unexpected exceptions
       toast.error("An unexpected error occurred.");
-      console.error("Add card error:", err);
       return false;
     }
   };
-  // console.log("selected",order)
 
-console.log("amount",amount)
 
   // capture data as an image
   const generateSummaryImage = (data) => {
@@ -251,7 +248,6 @@ const actualVatFee = calculatePaymentVatFees(cardConsumableAmount);
  const handlePayment = async () => {
    
    try {
-    console.log("Payment button clicked");
     const stripToken = selectedCardId?.stripekey || getAllCards?.[0]?.stripekey;
     
 
@@ -275,7 +271,6 @@ const actualVatFee = calculatePaymentVatFees(cardConsumableAmount);
     // 👇 Generate and append summary image
     const summaryImageBlob = await generateSummaryImage(payload);
     if (summaryImageBlob) {
-      console.log("summaryImageBlob",summaryImageBlob)
       formData.append('screenshot', summaryImageBlob, summaryImageBlob); // Correct filename
     }
 
@@ -294,11 +289,9 @@ const actualVatFee = calculatePaymentVatFees(cardConsumableAmount);
     }
 
     if (error) {
-      console.error("Payment error:", error);
       toast.error("Something Went Wrong.");
     }
   } catch (err) {
-    console.error("Unexpected error in handlePayment:", err);
     toast.error("Unexpected error occurred.");
   }
 };
@@ -354,7 +347,6 @@ const handleSubmit = async (e) => {
     });
 
     const { data: respData, error: apiError } = res;
-    console.log("res", respData);
 
     if (respData?.error === true) {
       toast.error(apiError?.data?.message || "API Error while adding card");
@@ -371,7 +363,6 @@ const handleSubmit = async (e) => {
     }
   } catch (err) {
     toast.error("Unexpected error occurred");
-    console.error("Card submission error:", err);
     return false;
   }
 };

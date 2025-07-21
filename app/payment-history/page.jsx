@@ -315,9 +315,7 @@ const Page = () => {
 
 
 
-  if(payments.length == 0){
-    console.log("object")
-  }
+
   useEffect(() => {
     if (paymentHistory && paymentHistory.length > 0) {
       setPayments(paymentHistory);

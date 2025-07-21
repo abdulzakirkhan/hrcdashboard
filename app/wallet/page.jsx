@@ -205,7 +205,6 @@ const handleSubmit = async (e) => {
 
       const { data: respData, error } = res || {};
 
-      console.log("respData", respData);
       if (respData) {
         if (respData?.result == 'Successfully Added Into Wallet') {
           toast.success(respData?.result || "Successfully Added Into Wallet");
