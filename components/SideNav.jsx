@@ -95,7 +95,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
   return (
     <div
-      className={`bg-gray-900 sm-screen-side-nav h-screen text-white fixed left-0 z-50 flex flex-col transition-all duration-1000 md:duration-1000 ${
+      className={`bg-gray-900 sm-screen-side-nav overflow-auto h-screen text-white fixed left-0 z-50 flex flex-col transition-all duration-1000 md:duration-1000 ${
         isCollapsed ? "w-10 md:w-16" : "w-52"
       }`}
       style={{ top: "75px" }}
