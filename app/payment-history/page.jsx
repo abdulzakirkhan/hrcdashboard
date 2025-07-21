@@ -303,7 +303,7 @@ const Page = () => {
 
   const [payments, setPayments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const entriesPerPage = 9;
+  const entriesPerPage = 6;
 
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
