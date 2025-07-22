@@ -641,7 +641,7 @@ useEffect(() => {
 
             {docxHtml && (
               <div
-                className={`absolute w-1/2 h-52 overflow-auto  -top-64 left-[20%] bg-white p-2 rounded-lg shadow-lg`}
+                className={`absolute w-1/2 h-52 border border-red overflow-auto  -top-64 left-[20%] bg-white p-2 rounded-lg shadow-lg`}
               >
                 <div className="text-end">
                   <button

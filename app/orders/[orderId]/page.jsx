@@ -120,7 +120,7 @@ const OrderDetail = ({ params }) => {
   const { serviceChargePercentage, vatFeePercentage } = shared;
   const serviceChargeFee = serviceChargePercentage;
   const vatChargeFee = (amount ? amount : order?.balanceamount * 20) / 100;
-  const processingFee = (amount ? amount : order?.balanceamount * 4) / 100;
+  const processingFee = (amount ? amount : (order?.balanceamount * 4)) / 100;
   const totalAmount = Number(amount) + processingFee + vatChargeFee; // Total amount including all feeses
   const [addCardModal, setAddCardModal] = useState(false);
   const stripe = useStripe();
@@ -427,7 +427,7 @@ const handleSubmit = async (e) => {
                     Processing Fee (4%) :
                   </span>
                   <span className="text-primary font-bold">
-                    {Number(processingFee).toFixed(3)}
+                    {Number(processingFee).toFixed(4)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -730,7 +730,7 @@ const handleSubmit = async (e) => {
                             <p className="text-sm text-grey">
                               Processing Fee (4%) :
                             </p>
-                            <p className="text-grey">{Number(vatChargeFee).toFixed(3)}</p>
+                            <p className="text-grey">{Number(processingFee).toFixed(4)}</p>
                           </div>
                           <div className="flex gap-6 mt-2 items-center">
                             <p className="text-sm text-grey">VAT (20%) :</p>
@@ -923,7 +923,7 @@ const handleSubmit = async (e) => {
                       className={`md:py-8 w-full border-2 h-56 rounded-xl px-5 py-3 ${
                         selectedCard === "bank" ? "border-blue-500" : ""
                       }`}
-                      onClick={() => handleCardSelect("bank")}
+                      // onClick={() => handleCardSelect("bank")}
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
@@ -946,7 +946,7 @@ const handleSubmit = async (e) => {
                             Processing fee (4%):
                           </span>
                           <span className="text-grey text-sm">
-                             {Number(processingFee).toFixed(2)}
+                             {Number(processingFee).toFixed(4)}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -1019,7 +1019,7 @@ const handleSubmit = async (e) => {
                             Processing fee (4%):
                           </span>
                           <span className="text-grey text-sm">
-                            {walletAmount?.currency} {processingFee ? Number(processingFee).toFixed(2) : "0.00"}
+                            {walletAmount?.currency} {processingFee ? Number(processingFee).toFixed(4) : "0.00"}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
