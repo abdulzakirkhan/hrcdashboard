@@ -131,18 +131,23 @@ const OrderDetail = ({ params }) => {
       const [makePayment, { isLoading: makePaymentLoading }] =
     useMakePaymentMutation();
 
+// console.log("walletAmount",walletAmount)
 
-    const total=order?.balanceamount
+    const withVat=true;
+    const total=amount ? amount : order?.balanceamount ;
       const consumableObj = getConsumableAmounts(
-    setIsChecked ? walletAmount?.amount : 0,
-    setIsChecked ? walletAmount?.rewardsamount : 0,
-    amount ? amount : total,
+    isChecked ? walletAmount?.amount : 0,
+    isChecked ? walletAmount?.rewardsamount : 0,
+    total,
+    withVat
   );
+
+
 
   const handleViewModal = () => {
     setAddCardModal(!addCardModal);
   };
-
+console.log("consumableObj",consumableObj)
   const [createOrder, { isLoading: createOrderLoading }] =
     useInitateOrderPaymentMutation();
 
