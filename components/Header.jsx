@@ -1,7 +1,10 @@
 "use client";
 
 import { APP_NAMES } from "@/config/constants";
+import { getCurrency, getCurrencyNameFromPhone } from "@/config/helpers";
 import { logOut } from "@/redux/auth/authSlice";
+import { useGetUserCurrencyAndCountryQuery } from "@/redux/order/ordersApi";
+import { useGetWalletAmountQuery } from "@/redux/payments/paymentApi";
 import { useGetRewardAmountsQuery } from "@/redux/rewards/rewardsApi";
 import { api } from "@/redux/service";
 import { useGetProfileQuery } from "@/redux/user/profileApi";
@@ -39,7 +42,21 @@ const Header = ({ profileName, profileImage }) => {
   const user = useSelector((state) => state.auth?.user);
   const { data: profileData } = useGetProfileQuery(user?.userid);
 
-
+  const currencyFormData = new FormData();
+  currencyFormData.append("clientid", user?.userid);
+  const { data: userDataCurrencies } =
+    useGetUserCurrencyAndCountryQuery(currencyFormData);
+  const {
+    data: walletAmount,
+    isLoading: walletAmountLoading,
+    refetch: walletAmountRefech,
+  } = useGetWalletAmountQuery({
+    clientId: user?.userid,
+    currency: getCurrency(getCurrencyNameFromPhone(user?.user_contact_no)),
+    nativecurrency: userDataCurrencies?.result?.currency
+      ? getCurrency(userDataCurrencies?.result?.currency)
+      : getCurrency(getCurrencyNameFromPhone(user?.user_contact_no)),
+  });
 
 
 
@@ -170,6 +187,7 @@ const Header = ({ profileName, profileImage }) => {
 
     initBranch();
   }, []);
+
   return (
     <>
       <header className="bg-[#312E81] px-2 md:px-0 fixed w-full z-50">
@@ -283,7 +301,7 @@ const Header = ({ profileName, profileImage }) => {
                           Total Earned:
                         </span>
                         <span className="ml-2 text-2xl font-bold text-primary">
-                          0.05 USD
+                          0.05 {walletAmount?.currency}
                         </span>
                       </div>
                     </div>

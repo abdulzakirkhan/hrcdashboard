@@ -42,7 +42,6 @@ const page = () => {
     e.preventDefault();
     setError("");
     setMessage("");
-    console.log("phone",phone)
     if (!phone) {
       setError("Please enter a valid phone number.");
       return;

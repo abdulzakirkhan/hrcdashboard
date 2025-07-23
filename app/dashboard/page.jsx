@@ -146,8 +146,6 @@ const DashboardPage = () => {
 
 
 
-  // console.log("user",user)
-  
   return (
     <section className={`mt-20`}>
       <div className="container mx-auto py-8">

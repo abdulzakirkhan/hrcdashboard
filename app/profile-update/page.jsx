@@ -97,7 +97,6 @@ const Page = () => {
     }
   }, [profileData]);
 
-  // console.log("✅ Updated userData:", profileData); // ✅ Log the correct value
 
   return (
     <>

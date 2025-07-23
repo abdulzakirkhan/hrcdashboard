@@ -205,7 +205,7 @@ const Orders = ({order,index}) => {
                 <div className="flex-wrap">
                   <div className="flex items-center gap-2">
                     <span className="fs-18">Total Price:</span>
-                    <span className="p3">{order?.totalPrice}</span>
+                    <span className="p3">{order?.price}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`p2 ${order?.payment_status === 1 ? "text-green" : "text-red"}`}>Payment Status:</span>
