@@ -30,7 +30,9 @@ import {
   calculatePaymentVatFees,
   getConsumableAmounts,
   getCurrency,
+  getCurrencyFromCode,
   getCurrencyNameFromPhone,
+  getCurrencySymbol,
   getFormattedPriceWith3,
   getIntOrderConsumableAmnts,
 } from "@/config/helpers";
@@ -51,6 +53,7 @@ import {
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
+import { baseUrl } from "@/config";
 const OrderDetail = ({ params }) => {
   const { orderId } = React.use(params); // Acc
   const orderType = ORDERS_TYPES.ALL_ORDERS;
@@ -101,7 +104,6 @@ const OrderDetail = ({ params }) => {
 
   const handleProceedToPay = () => {
     setShowCheckout(true);
-    setSummaryTab(true);
   };
   const [selectedCardId, setSelectedCardId] = useState(null);
 
@@ -114,7 +116,6 @@ const OrderDetail = ({ params }) => {
   const handleTabSwitch = (tab, mode) => {
     setActiveTab(tab);
     handleCardSelect(mode);
-    setAmount()
   };
   const shared = useSelector((state) => state?.shared || {});
   const { serviceChargePercentage, vatFeePercentage } = shared;
@@ -134,20 +135,24 @@ const OrderDetail = ({ params }) => {
 // console.log("walletAmount",walletAmount)
 
     const withVat=true;
-    const total=amount ? amount : order?.balanceamount ;
-      const consumableObj = getConsumableAmounts(
-    isChecked ? walletAmount?.amount : 0,
-    isChecked ? walletAmount?.rewardsamount : 0,
-    total,
-    withVat
-  );
+    const total=amount ? amount : order?.balanceamount > 1 ? order?.balanceamount : 2 ;
+
+    const consumableObj = getConsumableAmounts(
+      isChecked ? walletAmount?.amount : 0,
+      isChecked ? walletAmount?.rewardsamount : 0,
+      total,
+      withVat
+    );
 
 
 
   const handleViewModal = () => {
     setAddCardModal(!addCardModal);
   };
-console.log("consumableObj",consumableObj)
+
+  console.log("consumableObj",consumableObj);
+
+
   const [createOrder, { isLoading: createOrderLoading }] =
     useInitateOrderPaymentMutation();
 
@@ -162,42 +167,7 @@ console.log("consumableObj",consumableObj)
   const cardConsumableAmount = consumableObj.cardConsumableAmount;
    const acutalServiceFee = calculatePaymentFees(cardConsumableAmount);
 
-  const handleAddCard = async (cardData) => {
-    try {
-      const res = await addCard({
-        clientid: user?.userid,
-        cardtype: cardData?.cardDetails?.brand,
-        Lastfourdigit: cardData?.cardDetails?.last4,
-        Stripekey: cardData?.stripeToken,
-      });
 
-      const { data: respData, error } = res;
-
-      // Network or API error
-      if (error) {
-        toast.error(
-          "Something went wrong while adding the card. Please try again."
-        );
-        return false;
-      }
-
-      // API returned an error in the response
-      if (respData?.error) {
-        toast.error(respData?.result?.result?.result || "Failed to add card.");
-        return false;
-      }
-
-      // Success case
-      toast.success(
-        respData?.result?.result?.result || "Card added successfully."
-      );
-      return true;
-    } catch (err) {
-      // Fallback for unexpected exceptions
-      toast.error("An unexpected error occurred.");
-      return false;
-    }
-  };
 
 
   // capture data as an image
@@ -387,13 +357,18 @@ const handleSubmit = async (e) => {
       },
     },
   };
+
+
+    const currencySymbol = getCurrencySymbol(getCurrencyFromCode(walletAmount?.currency));
+  
+    console.log("currencySymbol",currencySymbol);
   if (summaryTab === "summary") {
     return (
       <div className="mt-20 !w-full relative">
         <div className="flex justify-between items-center py-2">
           <button
-            onClick={() => setSummaryTab(null)}
-            className="flex my-4 items-center gap-2 hover:text-[#312E81]"
+            onClick={() => setSummaryTab("")}
+            className="flex my-4 items-center gap-2 hover:text-primary"
           >
             <FaArrowLeftLong /> Back
           </button>
@@ -642,12 +617,36 @@ const handleSubmit = async (e) => {
     );
   }
 
-  // useEffect(() => {
-  //   if(getAllOrders?.result?.orderAll){
-  //     setOrdersData(getAllOrders?.result?.orderAll)
-  //   }
-  // }, [getAllOrders])
 
+const handleFileDownload = () => {
+  try {
+    const fileUrl =  baseUrl+"/"+order?.downloadfile;
+
+    if (!fileUrl) {
+      console.error("No file URL provided");
+      return;
+    }
+
+    // Create a temporary <a> to trigger the download
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.target ="_blank"
+    link.download = ""; // Optional: you can set a filename like "file.pdf"
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error("Error downloading file:", error);
+  }
+};
+
+
+
+
+    const radius = 13;
+    const circumference = 2 * Math.PI * radius;
+    const progress = Number(order?.completepercentage);
+    const offset = circumference - (progress / 100) * circumference;
   return (
     <>
       {/* Display Checkout Page if showCheckout is true */}
@@ -658,7 +657,7 @@ const handleSubmit = async (e) => {
               setShowCheckout(false);
               handleCardSelect("");
             }}
-            className="flex my-4 items-center gap-2 hover:text-[#312E81]"
+            className="flex my-4 items-center gap-2 hover:text-primary"
           >
             <FaArrowLeftLong /> Back
           </button>
@@ -1122,8 +1121,8 @@ const handleSubmit = async (e) => {
                                     : ""
                                 } dark:text-blue-500`}
                                 strokeWidth="2.7"
-                                strokeDasharray="100"
-                                strokeDashoffset={order?.remaining}
+                                strokeDasharray={circumference}
+                                strokeDashoffset={offset}
                                 strokeLinecap="round"
                               ></circle>
                             </svg>
@@ -1164,9 +1163,16 @@ const handleSubmit = async (e) => {
                   whileInView={{ opacity: 1 }}
                   transition={{ duration: 0.8, delay: 1 }}
                 >
-                  <div className="flex p3 items-center gap-3">
-                    <span className="font-bold">Order ID:</span>{" "}
-                    <span className="font-semibold">{order?.order_id}</span>
+                  <div className="">
+                    {order?.payment_status === 1 && (
+                      <div className="pb-4">
+                        <button className="bg-green px-6 py-2 rounded-md text-white">Marks : {order?.marks}</button>
+                      </div>
+                    )}
+                    <div className="flex p3 items-center gap-3">
+                      <span className="font-bold">Order ID:</span>{" "}
+                      <span className="font-semibold">{order?.order_id}</span>
+                    </div>
                   </div>
                   <div className="flex flex-col gap-4">
                     <div className="flex p3 items-center gap-3">
@@ -1187,17 +1193,24 @@ const handleSubmit = async (e) => {
                   whileInView={{ opacity: 1 }}
                   transition={{ duration: 0.8, delay: 1.6 }}
                 >
-                  <div className="flex wrap gap-3 items-center">
+                  <div className="flex gap-3 items-center ">
                     {order?.payment_status === 1 ? (
-                      <button className="btnText mx-2 text-white bg-primary flex justify-center items-center gap-3 rounded-md w-219 w-[219] h-[40]">
-                        <Image
-                          src={"/orders/meeting.svg"}
-                          width={13}
-                          height={16}
-                          alt=""
-                        />
-                        Schedule Meeting
-                      </button>
+                      <div className="flex items-center w-full">
+                        <button className="btnText mx-2 text-white bg-primary flex justify-center items-center gap-3 rounded-md w-219 w-[219] h-[40]">
+                          <Image
+                            src={"/orders/meeting.svg"}
+                            width={13}
+                            height={16}
+                            alt=""
+                          />
+                          Schedule Meeting
+                        </button>
+                        <button onClick={handleFileDownload}
+                          className="btnText text-white bg-[#13a09d] rounded-md w-[219px] h-[40px] flex items-center justify-center"
+                        >
+                          Download File
+                        </button>
+                      </div>
                     ) : (
                       <button
                         onClick={handleProceedToPay}

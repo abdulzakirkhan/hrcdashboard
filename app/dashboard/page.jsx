@@ -73,6 +73,7 @@ const DashboardPage = () => {
   const inProgressOrders = allOrders.filter(
     (order) => order.orderprogress === "Working"
   );
+
   const cardsData = [
     {
       id: 1,

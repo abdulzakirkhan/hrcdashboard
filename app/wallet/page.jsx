@@ -7,7 +7,7 @@ import React, { useEffect, useState } from "react";
 import { FaCcAmex, FaCcDiscover, FaCcMastercard, FaCcVisa, FaCreditCard, FaInfoCircle } from "react-icons/fa";
 import { useGetUserCurrencyAndCountryQuery } from "@/redux/order/ordersApi";
 import { useSelector } from "react-redux";
-import { getCurrency, getCurrencyNameFromPhone } from "@/config/helpers";
+import { getCurrency, getCurrencyFromCode, getCurrencyNameFromPhone, getCurrencySymbol } from "@/config/helpers";
 import {
   useAddWalletCardMutation,
   useGetWalletAllCardsQuery,
@@ -64,6 +64,12 @@ const page = () => {
       ? getCurrency(userDataCurrencies?.result?.currency)
       : getCurrency(getCurrencyNameFromPhone(user?.user_contact_no)),
   });
+
+
+
+
+
+
   const stripe = useStripe();
   const elements = useElements();
   const [selectedCardId, setSelectedCardId] = useState(null);
@@ -218,7 +224,11 @@ const handleSubmit = async (e) => {
     }
   }
 
+  const currencySymbol = getCurrencySymbol(getCurrencyFromCode(walletAmount?.currency));
 
+  // console.log("currencySymbol",currencySymbol);
+
+ 
   return (
     <>
       <section className="mt-20">
@@ -243,7 +253,7 @@ const handleSubmit = async (e) => {
                   <span className="text-green-600 font-medium">
                     <span className="font-bold">
                       {" "}
-                      {walletAmount?.currency}{" "}
+                      {currencySymbol}{" "}
                     </span>
                     {walletAmount?.rewardsamount}
                   </span>
@@ -252,7 +262,7 @@ const handleSubmit = async (e) => {
                   & Wallet Amount:{" "}
                   <span className="text-green-600 font-medium">
                     {" "}
-                    {walletAmount?.currency}{" "}
+                    {currencySymbol}{" "}
                     {walletAmount?.amount
                       ? Number(walletAmount.amount).toFixed(2)
                       : "0.00"}
@@ -260,7 +270,7 @@ const handleSubmit = async (e) => {
                 </p>
               </div>
               <h1 className="text-2xl font-bold text-blue-600">
-                {walletAmount?.currency}{" "}
+                {currencySymbol}{" "}
                 {walletAmount?.rewardsamountpluswalletamount
                   ? Number(walletAmount.rewardsamountpluswalletamount).toFixed(
                       2
@@ -435,7 +445,7 @@ const handleSubmit = async (e) => {
         ) : isBank ? (
           <section>
             <button
-              className="flex items-center gap-2 hover:text-[#312E81]"
+              className="flex items-center gap-2 hover:text-primary"
               onClick={() => setIsBank(false)}
             >
               {" "}
@@ -601,21 +611,21 @@ const handleSubmit = async (e) => {
                   <h1>Available Credit</h1>
                   <p className="py-2">
                     Rewards Amount:{" "}
-                    <span className="font-bold">{walletAmount?.currency}</span>{" "}
+                    <span className="font-bold">{currencySymbol}</span>{" "}
                     {walletAmount?.rewardsamount
                       ? Number(walletAmount.rewardsamount).toFixed(2)
                       : "0.00"}
                   </p>
                   <p className="py-2">
                     Wallet Amount:{" "}
-                    <span className="font-bold">{walletAmount?.currency}</span>{" "}
+                    <span className="font-bold">{currencySymbol}</span>{" "}
                     {walletAmount?.amount
                       ? Number(walletAmount.amount).toFixed(2)
                       : "0.00"}
                   </p>
                   <p>
                     Total Credit (Rewards + Wallet):{" "}
-                    <span className="font-bold">{walletAmount?.currency}</span>{" "}
+                    <span className="font-bold">{currencySymbol}</span>{" "}
                     {walletAmount?.rewardsamountpluswalletamount
                       ? Number(
                           walletAmount.rewardsamountpluswalletamount

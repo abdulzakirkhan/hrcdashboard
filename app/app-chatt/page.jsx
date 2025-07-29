@@ -29,6 +29,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
 
 import mammoth from "mammoth";
+import { DateTime } from "luxon";
 const ChatPage = () => {
   const user = useSelector((state) => state.auth?.user);
   const [page, setPage] = useState(0);
@@ -388,14 +389,27 @@ useEffect(() => {
   return /\.docx$/i.test(value.trim());
 };
 
+
+
+  const getFormatedTime = (time) => {
+      if (time) {
+      if (time?.includes(' ')) {
+        return DateTime.fromFormat(time, 'yyyy-MM-dd HH:mm:ss').toFormat(
+          'hh:mm a'
+        );
+      } else {
+        return DateTime.fromFormat(time, 'HH:mm:ss').toFormat('hh:mm a');
+      }
+    }
+  }
   
   return (
     <>
-      <section className="mt-20">
+      <section className="mt-12 border">
         {/* Header */}
-        <div className="bg-[#4B67DB] fixed w-full top-[75px] z-10">
+        <div className="bg-[#4B67DB] w-full z-10 border mx-0 m-0">
           <div className="container mx-auto px-6 py-2">
-            <h2 className="text-white">Customer Support</h2>
+            <h2 className="text-white">{sudoName}</h2>
           </div>
         </div>
 
@@ -432,6 +446,7 @@ useEffect(() => {
 
                     const isPdf = msg?.msgfile !=="" ? isPdfFile(msg?.msgfile) : false;
                     const isDox = msg?.msgfile !=="" ? isDocxFile(msg?.msgfile) : false;
+                    const msgtime = getFormatedTime(msg?.time)
                     return (
                       <div key={msg?.id} className="mb-4 p-4">
                         <div
@@ -516,7 +531,7 @@ useEffect(() => {
                               : "text-gray-500 text-start"
                           }`}
                         >
-                          {msg.time}
+                          {msgtime}
                         </p>
                       </div>
                     );
