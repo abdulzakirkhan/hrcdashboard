@@ -37,7 +37,6 @@ const DashboardPage = () => {
   };
 
   const handleBannerClick = (bannerId) => {
-    console.log("Banner clicked with ID:", bannerId);
     // You can also trigger navigation or another API call here
     // For example:
     // router.push(`/banners/${bannerId}`)
@@ -145,72 +144,6 @@ const DashboardPage = () => {
       dispatch(ChangeUser({ ...user, token: getToken?.result?.token }));
   }, [getToken]);
 
-  useEffect(() => {
-    if (!getToken?.result?.token || !user) return;
-
-    const setupOneSignalTags = async () => {
-      try {
-        if (!window.OneSignalInstance) {
-          console.log("OneSignalInstance is NOT ready yet.");
-          return;
-        }
-
-        console.log("OneSignalInstance is available. Setting up listener...");
-
-        // Check current subscription status immediately
-        const currentSubscriptionId = window.OneSignalInstance.User.PushSubscription.id;
-        if (currentSubscriptionId) {
-          console.log("Already subscribed with ID:", currentSubscriptionId);
-          await addUserTag(user?.userid);
-        }
-
-        // Setup listener for future changes
-        window.OneSignalInstance.User.PushSubscription.addEventListener(
-          "change",
-          async (subscriptionChange) => {
-            console.log("PushSubscription change event fired:", subscriptionChange);
-            
-            if (subscriptionChange.current.id) {
-              await addUserTag(user?.userid);
-            } else {
-              console.log("User unsubscribed");
-            }
-          }
-        );
-      } catch (error) {
-        console.error("Error in OneSignal setup:", error);
-      }
-    };
-
-    const addUserTag = async (id) => {
-      try {
-        console.log("Attempting to add userId tag:", id);
-
-        if(!id){
-          return;
-        }
-
-        const tagValue = String(id).trim();
-        await window.OneSignalInstance.User.addTag("userId", tagValue);
-        
-        // Verify the tag was added
-        const tags = await window.OneSignalInstance.User.getTags();
-        console.log("Current OneSignal Tags:", tags);
-        
-        if (!tags || tags.userId !== tagValue) {
-          console.warn("Tag might not have been set correctly. Retrying...");
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          await addUserTag(tagValue);
-        }
-      } catch (tagError) {
-        console.error("Error adding user tag:", tagError);
-      }
-    };
-
-    if(user){
-      setupOneSignalTags();
-    }
-  }, [getToken, user,userId]);
 
   return (
     <section className={`mt-20`}>

@@ -2,6 +2,7 @@
 
 import { APP_NAMES } from "@/config/constants";
 import { getCurrency, getCurrencyNameFromPhone } from "@/config/helpers";
+import { BASE_URL } from "@/constants/apiUrls";
 import { logOut } from "@/redux/auth/authSlice";
 import { useGetAllNotificationsQuery, useSeenAllNotificationsMutation, useSeenSingleNotificationMutation } from "@/redux/notifications/notificationsApi";
 import { useGetUserCurrencyAndCountryQuery } from "@/redux/order/ordersApi";
@@ -64,7 +65,7 @@ const Header = ({ profileName, profileImage }) => {
 
   const [userData, setUserData] = useState({
     profileImage: profileData?.path
-      ? "https://staging.portalteam.org" + profileData?.path
+      ? BASE_URL + profileData?.path
       : "/header/profile.svg",
     name: profileData?.name || "Hello, User",
   });
@@ -139,7 +140,7 @@ const Header = ({ profileName, profileImage }) => {
   useEffect(() => {
     if (profileData) {
       const updatedUser = {
-        profileImage: "https://staging.portalteam.org" + profileData?.path,
+        profileImage: BASE_URL + profileData?.path,
         name: profileData?.name,
       };
       setUserData(updatedUser);
@@ -358,10 +359,6 @@ const formatTime = (date) => {
   }
 
 
-
-  notifications.map((no) => {
-    console.log("notification :",no?.status)
-  })
   return (
     <>
       <header className="bg-primary px-2 md:px-0 fixed w-full z-50">

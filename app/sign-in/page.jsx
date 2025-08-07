@@ -78,10 +78,7 @@ export default function SignInPage() {
     }
   };
 
-  //   useEffect(() => {
-  //   if (getToken?.result?.token)
-  //     dispatch(ChangeUser({ ...user, token: getToken?.result?.token }));
-  // }, [getToken]);
+
   return (
     <>
       <section className="bg-[#FFFFFF]">

@@ -1,0 +1,23 @@
+services:
+  hrc-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"  # Host:Container
+    container_name: hrc-web
+    volumes:
+      - ./logs:/app/logs  # Make logs writable
+    environment:
+      - NODE_ENV=staging
+      - HOSTNAME=0.0.0.0
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]  # ✅ Correct port inside container
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # Remove 'read_only' if logs volume needs to write
+

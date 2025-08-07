@@ -54,7 +54,11 @@ import {
   useStripe,
 } from "@stripe/react-stripe-js";
 import { baseUrl } from "@/config";
+
+import { useRouter } from 'next/navigation';
 const OrderDetail = ({ params }) => {
+  const BASE_URL =process.env.NEXT_PUBLIC_BASE_URL
+  const router = useRouter();
   const { orderId } = React.use(params); // Acc
   const orderType = ORDERS_TYPES.ALL_ORDERS;
   const user = useSelector((state) => state.auth?.user);
@@ -66,7 +70,7 @@ const OrderDetail = ({ params }) => {
   const [showCheckout, setShowCheckout] = useState(false);
   const [activeTab, setActiveTab] = useState();
   const [summaryTab, setSummaryTab] = useState("");
-
+  
   const getAllorderBody = new FormData();
   getAllorderBody.append("id", user?.userid);
   getAllorderBody.append("paymentorderstatus", getOrderTypeValues(orderType));
@@ -115,7 +119,7 @@ const OrderDetail = ({ params }) => {
   }
   const handleTabSwitch = (tab, mode) => {
     setActiveTab(tab);
-    handleCardSelect(mode);
+    // handleCardSelect(mode);
   };
   const shared = useSelector((state) => state?.shared || {});
   const { serviceChargePercentage, vatFeePercentage } = shared;
@@ -150,12 +154,10 @@ const OrderDetail = ({ params }) => {
     setAddCardModal(!addCardModal);
   };
 
-  console.log("consumableObj",consumableObj);
 
 
   const [createOrder, { isLoading: createOrderLoading }] =
     useInitateOrderPaymentMutation();
-
   const [addCard, { isLoading: addCardLoading }] = useAddCardMutation();
   const {
     data: getAllCards = { result: { result: {} } },
@@ -220,12 +222,71 @@ const OrderDetail = ({ params }) => {
 };
 const actualVatFee = calculatePaymentVatFees(cardConsumableAmount);
 
+  const meezanPayment = async () => {
+    try {
+      console.log("object")
+      const payload = {
+        // token: stripToken,
+        currency: getCurrency(order?.currency),
+        amount: getFormattedPriceWith3(cardConsumableAmount),
+        servicecharges: processingFee,
+        // count: 1,
+        // orderids: [orderId],
+        rewardamount: getFormattedPriceWith3(consumableObj?.rewardConsumableAmount),
+        walletConsumable: getFormattedPriceWith3(consumableObj?.walletConsumableAmount),
+        vat: 0,
+        // additionalAmount: getFormattedPriceWith3(consumableObj?.additionalAmount),
+      };
+
+      const formData = new FormData();
+      Object.entries(payload).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+
+      let ids=String(orderId);
+      let oid= [ids]
+      console.log("orderId",orderId)
+      formData.append('orderids', oid); // Append order ID to the form data
+        // 👇 Generate and append summary image
+      const summaryImageBlob = await generateSummaryImage(payload);
+      if (summaryImageBlob) {
+        formData.append('screenshot', summaryImageBlob, summaryImageBlob); // Correct filename
+      }
+
+      const paymentResponse =await fetch(`${BASE_URL}/cronejob/genlink_hrc_web`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!paymentResponse.ok) {
+        throw new Error(`HTTP error! status: ${paymentResponse.status}`);
+      }
+
+      const data = await paymentResponse.json();
+      if (!data?.url) {
+        throw new Error('URL not found in response');
+      }
+      console.log("paymentResponse",data?.url)
+      router.push(data?.url)
+      
+    } catch (error) {
+      console.log(error)
+    }
+  }
  const handlePayment = async () => {
    
    try {
-    const stripToken = selectedCardId?.stripekey || getAllCards?.[0]?.stripekey;
     
 
+    
+
+    // 👇 Submit the payment
+    if(selectedCard === "bank") {
+      meezanPayment();
+      return;
+    }
+
+    const stripToken = selectedCardId?.stripekey || getAllCards?.[0]?.stripekey;
     const payload = {
       token: stripToken,
       currency: getCurrency(order?.currency),
@@ -242,14 +303,11 @@ const actualVatFee = calculatePaymentVatFees(cardConsumableAmount);
     Object.entries(payload).forEach(([key, value]) => {
       formData.append(key, value);
     });
-
-    // 👇 Generate and append summary image
+      // 👇 Generate and append summary image
     const summaryImageBlob = await generateSummaryImage(payload);
     if (summaryImageBlob) {
       formData.append('screenshot', summaryImageBlob, summaryImageBlob); // Correct filename
     }
-
-    // 👇 Submit the payment
     const res = await makePayment(formData);
     const { data: respData, error } = res || {};
 
@@ -361,29 +419,30 @@ const handleSubmit = async (e) => {
 
     const currencySymbol = getCurrencySymbol(getCurrencyFromCode(walletAmount?.currency));
   
-    console.log("currencySymbol",currencySymbol);
   if (summaryTab === "summary") {
     return (
       <div className="mt-20 !w-full relative">
-        <div className="flex justify-between items-center py-2">
-          <button
-            onClick={() => setSummaryTab("")}
-            className="flex my-4 items-center gap-2 hover:text-primary"
-          >
-            <FaArrowLeftLong /> Back
-          </button>
-          <div
-            onClick={handleViewModal}
-            className="flex items-center gap-3 py-3 cursor-pointer hover:bg-gray-200 p-2 rounded-lg transition"
-          >
-            <div className="rounded-full border border-blue-600 w-7 h-7 text-blue-600 flex justify-center items-center font-bold">
-              +
+        {selectedCard !== "bank" && (
+          <div className="flex justify-between items-center py-2">
+            <button
+              onClick={() => setSummaryTab("")}
+              className="flex my-4 items-center gap-2 hover:text-primary"
+            >
+              <FaArrowLeftLong /> Back
+            </button>
+            <div
+              onClick={handleViewModal}
+              className="flex items-center gap-3 py-3 cursor-pointer hover:bg-gray-200 p-2 rounded-lg transition"
+            >
+              <div className="rounded-full border border-blue-600 w-7 h-7 text-blue-600 flex justify-center items-center font-bold">
+                +
+              </div>
+              <span className="text-gray-700 font-medium">
+                Add New Debit Card
+              </span>
             </div>
-            <span className="text-gray-700 font-medium">
-              Add New Debit Card
-            </span>
           </div>
-        </div>
+        )}
 
         <div className="grid !w-full lg:grid-cols-2 justify-items-center gap-8 items-center">
           <div className="w-full">
@@ -525,7 +584,7 @@ const handleSubmit = async (e) => {
             </>
           )}
 
-          {getAllCards && getAllCards?.length > 0 && (
+          {getAllCards && selectedCard !== "bank" && getAllCards?.length > 0 && (
             <div className="md:col-span-12 space-y-4">
               <h3 className="text-lg font-semibold text-gray-800">
                 Select Payment Method
@@ -604,7 +663,7 @@ const handleSubmit = async (e) => {
 
           <div className="w-full py-2 text-center">
             <button
-              onClick={handlePayment} disabled={selectedCardId ? false : true}
+              onClick={handlePayment} disabled={selectedCardId || selectedCard === "bank" ? false : true}
               className="px-12 py-2 md:me-24 rounded-lg bg-primary text-white"
             >
               Pay {walletAmount?.currency}{" "}
@@ -618,29 +677,29 @@ const handleSubmit = async (e) => {
   }
 
 
-const handleFileDownload = () => {
-  try {
-    const fileUrl =  baseUrl+"/"+order?.downloadfile;
+  const handleFileDownload = () => {
+    try {
+      const fileUrl =  baseUrl+"/"+order?.downloadfile;
 
-    if (!fileUrl) {
-      console.error("No file URL provided");
-      return;
+      if (!fileUrl) {
+        console.error("No file URL provided");
+        return;
+      }
+
+      // Create a temporary <a> to trigger the download
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.target ="_blank"
+      link.download = ""; // Optional: you can set a filename like "file.pdf"
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error downloading file:", error);
     }
+  };
 
-    // Create a temporary <a> to trigger the download
-    const link = document.createElement("a");
-    link.href = fileUrl;
-    link.target ="_blank"
-    link.download = ""; // Optional: you can set a filename like "file.pdf"
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  } catch (error) {
-    console.error("Error downloading file:", error);
-  }
-};
-
-
+  console.log("BASE_URL",BASE_URL)
 
 
     const radius = 13;
@@ -671,7 +730,10 @@ const handleFileDownload = () => {
                     <div className="w-full md:col-span-6 border-2 p-4 rounded-lg">
                       <div
                         className="flex justify-between items-center"
-                        onClick={() => handleTabSwitch("Full", "wallet")}
+                        onClick={() => {
+                          handleTabSwitch("Full");
+                          handleCardSelect("bank")
+                        }}
                       >
                         <div className="flex items-center gap-3">
                           <p>Full Payment</p>
@@ -686,8 +748,8 @@ const handleFileDownload = () => {
                               type="radio"
                               name="paymentMethod"
                               value="wallet"
-                              checked={selectedCard === "wallet"}
-                              onChange={() => handleCardSelect("wallet")}
+                              checked={selectedCard === "bank"}
+                              onChange={() => handleCardSelect("bank")}
                               className="h-4 w-4"
                             />
                           </label>
@@ -927,7 +989,7 @@ const handleFileDownload = () => {
                       className={`md:py-8 w-full border-2 h-56 rounded-xl px-5 py-3 ${
                         selectedCard === "bank" ? "border-blue-500" : ""
                       }`}
-                      // onClick={() => handleCardSelect("bank")}
+                      onClick={() => handleCardSelect("bank")}
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">

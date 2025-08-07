@@ -177,6 +177,7 @@ const Page = () => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+  
   return (
     <section className="py-12 bg-gray-50 min-h-screen mt-12">
       <div className="md:max-w-6xl mx-auto md:px-4 lg:px-8">
@@ -309,7 +310,6 @@ const Page = () => {
               <div className="mt-8 flex flex-wrap justify-center gap-2 md:space-x-4">
                 <button
                   onClick={shareWithWhatsapp}
-                  // href="https://api.whatsapp.com/send?text=https://hybridresearchcenter.app.link/u0Ck3qhUNOb"
                   target="_blank"
                   className="p-2 rounded-full bg-green-100 hover:bg-green-200 transition-colors"
                 >
@@ -317,7 +317,6 @@ const Page = () => {
                 </button>
                 <button
                   onClick={shareWithInstagram}
-                  // href="https://www.instagram.com/sharer.php?u=https://hybridresearchcenter.app.link/u0Ck3qhUNOb"
                   target="_blank"
                   className="p-2 rounded-full bg-pink-100 hover:bg-pink-200 transition-colors"
                 >
@@ -325,7 +324,6 @@ const Page = () => {
                 </button>
                 <button
                   onClick={shareWithFacebook}
-                  // href="https://www.facebook.com/sharer/sharer.php?u=https://hybridresearchcenter.app.link/u0Ck3qhUNOb"
                   target="_blank"
                   className="p-2 rounded-full bg-blue-100 hover:bg-blue-200 transition-colors"
                 >
@@ -333,7 +331,6 @@ const Page = () => {
                 </button>
                 <button
                   onClick={shareWithX}
-                  // href="https://twitter.com/intent/tweet?url=https://hybridresearchcenter.app.link/u0Ck3qhUNOb"
                   target="_blank"
                   className="p-2 rounded-full bg-sky-100 hover:bg-sky-200 transition-colors"
                 >

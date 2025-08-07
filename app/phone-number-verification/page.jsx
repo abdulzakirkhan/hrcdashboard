@@ -26,7 +26,7 @@ const page = () => {
 
   // const auth = getAuth(app);
 
-//   // 🔐 Initialize Recaptcha
+  // 🔐 Initialize Recaptcha
   // const setupRecaptcha = () => {
   //   if (!window.recaptchaVerifier) {
   //     window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {

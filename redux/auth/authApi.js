@@ -5,6 +5,7 @@ import { SIGN_IN_USER } from '../../constants/apiUrls';
 import { baseUrl } from '@/config';
 
 export const authApi = api.injectEndpoints({
+  
   endpoints: (builder) => ({
     signup: builder.mutation({
       query: (body) => {

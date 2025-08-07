@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
-  output: 'standalone',  // ✅ Added this line for standalone build
   images: {
     remotePatterns: [
       {
@@ -11,10 +10,6 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'staging.portalteam.org',
-      },
-      {
-        protocol: 'https',
-        hostname: 'portalteam.org',
       },
     ],
   },

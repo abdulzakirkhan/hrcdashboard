@@ -6,6 +6,8 @@ import { BASE_URL } from '@/constants/apiUrls';
 import { ChangeUser, logOut } from './auth/authSlice';
 
 export const baseQueryWithReauth = async (args, api, extraOptions) => {
+
+  
   const baseQuery = fetchBaseQuery({
     baseUrl: BASE_URL,
     prepareHeaders: (headers, { getState }) => {

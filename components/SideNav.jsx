@@ -9,10 +9,11 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { useGetProfileQuery } from "@/redux/user/profileApi";
-import { baseUrl } from "@/config";
 import { useDispatch } from "react-redux";
 import { logOut } from "@/redux/auth/authSlice";
 import { api } from "@/redux/service";
+import { BASE_URL } from "@/constants/apiUrls";
+
 
 const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const user = useSelector((state) => state.auth?.user);
@@ -23,10 +24,10 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const [showPopUp, setShowPopUp] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-
+  const Base_URL = process.env.NEXT_BASE_URL;
   const [userData, setUserData] = useState({
     profileImage: profileData?.path
-      ? "https://staging.portalteam.org" + profileData?.path
+      ? Base_URL + profileData?.path
       : "/header/profile.svg",
     name: profileData?.name || "Hello, User",
   });
@@ -71,7 +72,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const handleClick = () => setShowPopUp(!showPopUp);
   const dispatch = useDispatch();
   const LogOutUser = () => {
-    console.log("User logged out");
+    // console.log("User logged out");
     dispatch(logOut()); // Clear redux state
     dispatch(api.util.resetApiState());
     router.push("/sign-in"); // Redirect to login
@@ -86,13 +87,15 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   useEffect(() => {
     if (profileData) {
       const updatedUser = {
-        profileImage: "https://staging.portalteam.org" + profileData?.path,
+        profileImage: BASE_URL + profileData?.path,
         name: profileData?.name,
       };
       setUserData(updatedUser);
     }
   }, [profileData]);
 
+
+  // console.log("profileData", userData?.profileImage);
   return (
     <div
       className={`bg-gray-900 sm-screen-side-nav overflow-auto h-screen text-white fixed left-0 z-50 flex flex-col transition-all duration-1000 md:duration-1000 ${
@@ -114,7 +117,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
       {!isCollapsed && (
         <div className="text-center p-3 profile">
           <Image
-            src={userData?.profileImage}
+            src={userData?.profileImage ? userData?.profileImage : "/header/profile.svg"}
             alt="Profile"
             width={80}
             height={80}

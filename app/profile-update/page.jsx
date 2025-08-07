@@ -15,6 +15,7 @@ import {
 import { useSelector } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
 import { useDispatch } from "react-redux";
+import { BASE_URL } from "@/constants/apiUrls";
 const Page = () => {
   const [image, setImage] = useState(null); // State to store the image preview URL
   const dispatch = useDispatch();
@@ -23,7 +24,7 @@ const Page = () => {
 
   const [userData, setUserData] = useState({
     profileImage: profileData?.path
-      ? "https://staging.portalteam.org" + profileData?.path
+      ? BASE_URL + profileData?.path
       : "/header/profile.svg",
     name: profileData?.name || "Hello, User",
     email: profileData?.email || "",
