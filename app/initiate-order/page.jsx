@@ -31,6 +31,7 @@ const page = () => {
   const handlePopupSubmit = (e) => {
     e.preventDefault();
     // You can handle form submission here
+    console.log("Popup form submitted");
     setShowPopup(false); // Close the popup after submission
   };
 

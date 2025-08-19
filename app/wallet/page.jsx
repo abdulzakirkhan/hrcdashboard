@@ -255,7 +255,7 @@ const handleSubmit = async (e) => {
                       {" "}
                       {currencySymbol}{" "}
                     </span>
-                    {walletAmount?.rewardsamount}
+                    {Number(walletAmount?.rewardsamount).toFixed(3)}
                   </span>
                 </p>
                 <p className="text-sm text-gray-500">
@@ -288,7 +288,7 @@ const handleSubmit = async (e) => {
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                    $
+                    {currency}
                   </span>
                   <input
                     type="number"

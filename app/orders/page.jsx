@@ -9,6 +9,7 @@ import { ORDERS_TYPES } from "@/constants";
 import { useGetOrderByPaymentTypeQuery } from "@/redux/order/ordersApi";
 import { getOrderTypeValues } from "@/config/myWebHelpers";
 import { useSelector } from "react-redux";
+import Loader from "@/components/Loader";
 const OrdersPage = () => {
   const orderType = ORDERS_TYPES.ALL_ORDERS;
   const user = useSelector((state) => state.auth?.user);
@@ -44,7 +45,7 @@ const OrdersPage = () => {
   };
   const ordersData = getAllOrders?.result?.orderAll || [];
   const [allOrders, setAllOrders] = useState([]);
-  const filteredOrders = getAllOrders?.result?.orderAll?.filter((order) => {
+  const filteredOrders = allOrders?.filter((order) => {
     const { completed, paid, unpaid, partiallyPaid } = filters;
 
     const statusMatch = !completed || order?.orderstatus === "Completed";
@@ -58,6 +59,11 @@ const OrdersPage = () => {
     return statusMatch && paymentMatch;
   });
 
+  useEffect(() => {
+    if(getAllOrders?.result){
+      setAllOrders(getAllOrders.result.orderAll);
+    }
+  }, [getAllOrders]);
   useEffect(() => {
     const handleRouteChange = () => setShowFilter(false);
     router.events?.on("routeChangeStart", handleRouteChange);
@@ -87,7 +93,7 @@ const OrdersPage = () => {
 
   const totalPages = Math.ceil(filteredOrders?.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
+  const currentOrders = filteredOrders?.slice(startIndex, startIndex + itemsPerPage);
 
   const handleNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
@@ -102,6 +108,10 @@ const OrdersPage = () => {
     setCurrentPage(1);
   }, [filters, ordersData]);
 
+
+  if(getAllOrdersLoading){
+    return <Loader />;
+  }
 
   
   return (

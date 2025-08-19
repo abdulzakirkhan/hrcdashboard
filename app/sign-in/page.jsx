@@ -1,5 +1,5 @@
 "use client";
-import { useVerifyLoginFeildsMutation } from "@/redux/auth/authApi";
+import { useSignupMutation, useVerifyLoginFeildsMutation } from "@/redux/auth/authApi";
 import { ChangeUser } from "@/redux/auth/authSlice";
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import Image from "next/image";
@@ -8,33 +8,45 @@ import toast, { Toaster } from "react-hot-toast";
 import { HiEye, HiEyeOff } from "react-icons/hi";
 import { useDispatch } from "react-redux";
 import * as Yup from "yup";
-
+import 'react-phone-number-input/style.css';
+import PhoneInput from 'react-phone-number-input';
+import { isValidPhoneNumber } from 'react-phone-number-input';
+import {  useRouter } from "next/navigation";
 export default function SignInPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-
+  const router = useRouter();
   const dispatch = useDispatch();
   const [verifyLoginFeidls, { isLoading: verifyLoginFeidlsLoading }] =
     useVerifyLoginFeildsMutation();
-  // Validation schema
-  const validationSchema = Yup.object({
+
+  const [signUp, { isLoading: signUpIsLoading }] = useSignupMutation();
+
+  const baseSchema =Yup.object({
     id: Yup.string().required("User ID is required"),
     password: Yup.string()
       .min(5, "Password must be at least 5 characters")
       .required("Password is required"),
-    ...(isSignUp && {
-      confirmPassword: Yup.string()
-        .oneOf([Yup.ref("password"), null], "Passwords must match")
-        .required("Confirm Password is required"),
-    }),
     rememberMe: Yup.boolean(),
   });
+  const signupSchema = baseSchema.shape({
+    name: Yup.string().required('User name is required'),
+    confirmPassword: Yup.string()
+    .oneOf([Yup.ref('password')], 'Passwords must match')
+    .required('Confirm your password'),
+    phone: Yup.string()
+    .required('Phone is required')
+    .test('is-valid-phone', 'Enter a valid phone number', (v) =>
+      v ? isValidPhoneNumber(v) : false
+  ),
+})
 
+const validationSchema = isSignUp ? signupSchema : baseSchema;
   // Login handler
-  const handleLogin = async (values) => {
-    // console.log("values",values)
+  const handleLogin = async (values,{resetForm}) => {
+    console.log("values",values)
     // return;
     setIsSubmitting(true);
     const formData = new FormData();
@@ -49,36 +61,59 @@ export default function SignInPage() {
       formData.append("isemail", "0");
     }
 
-    const res = await verifyLoginFeidls(formData);
-    const { error, data: respData } = res || {};
-    if (respData) {
-      if (
-        respData?.result?.userdetail?.[0]?.client_verification_status == "1"
-      ) {
-        dispatch(
-          ChangeUser({
-            ...respData?.result?.userdetail?.[0],
-            isVerified: true,
-          })
-        );
-      } else if (
-        respData?.result?.userdetail?.[0]?.client_verification_status == "0"
-      )
-        dispatch(
-          ChangeUser({
-            ...respData?.result?.userdetail?.[0],
-            isVerified: false,
-          })
-        );
-      else toast.error("Invalid Credentials");
+    if(!isSignUp){
+      const res = await verifyLoginFeidls(formData);
+      const { error, data: respData } = res || {};
+      if (respData) {
+        if (
+          respData?.result?.userdetail?.[0]?.client_verification_status == "1"
+        ) {
+          dispatch(
+            ChangeUser({
+              ...respData?.result?.userdetail?.[0],
+              isVerified: true,
+            })
+          );
+        } else if (
+          respData?.result?.userdetail?.[0]?.client_verification_status == "0"
+        )
+          dispatch(
+            ChangeUser({
+              ...respData?.result?.userdetail?.[0],
+              isVerified: false,
+            })
+          );
+        else toast.error("Invalid Credentials");
+      }
+      if (error) {
+        toast.error(error || "error");
+      }
+    } else {
+      const payloads = {
+        phoneNumber: values.phone,
+        email: values.id,
+        name: values.name,
+        referById: null,
+        appNameCode: "hrc",
+        newPassword: values.password,
+        confirmPassword: values.confirmPassword,
+      };
+      const response = await signUp(payloads);
+      const {error,data: resData} = response || {};
+      if(resData){
+        resetForm();
+        toast.success("Sign up successful .");
+        // router.push("/sign-in");
+        setIsSignUp(false);
+      }
     }
 
-    if (error) {
-      toast.error(error || "error");
-    }
   };
 
-
+  //   useEffect(() => {
+  //   if (getToken?.result?.token)
+  //     dispatch(ChangeUser({ ...user, token: getToken?.result?.token }));
+  // }, [getToken]);
   return (
     <>
       <section className="bg-[#FFFFFF]">
@@ -109,14 +144,60 @@ export default function SignInPage() {
                   initialValues={{
                     id: "",
                     password: "",
-                    ...(isSignUp && { confirmPassword: "" }),
                     rememberMe: false,
+                    ...(isSignUp && { name: '', confirmPassword: '', phone: '' }),
                   }}
                   validationSchema={validationSchema}
                   onSubmit={handleLogin}
                 >
-                  {({ isSubmitting }) => (
+                  {({ isSubmitting, values, errors, touched, setFieldValue }) => (
                     <Form className="w-full">
+
+                      {/* Name */}
+
+                      {isSignUp && (
+                        <div className="mb-2">
+                        <label
+                          htmlFor="name"
+                          className="block text-sm font-medium text-gray-700"
+                        >
+                          User name
+                        </label>
+                        <Field
+                          type="text"
+                          id="name"
+                          name="name"
+                          placeholder="User name"
+                          className="mt-1 px-4 py-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <ErrorMessage
+                          name="name"
+                          component="div"
+                          className="text-red-500 text-sm"
+                        />
+                        </div>
+                      )}
+                      {isSignUp && (
+                        <div className="mb-4">
+                          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                            Phone number
+                          </label>
+                          <PhoneInput
+                            id="phone"
+                            name="phone"
+                            international                 // shows country selector + codes
+                            defaultCountry="PK"           // pick a sensible default for your users
+                            value={values.phone}
+                            onChange={(val) => setFieldValue('phone', val)}
+                          />
+                          {touched.phone && errors.phone && (
+                            <div className="text-red-500 text-sm">{errors.phone}</div>
+                          )}
+                        </div>
+                      )}
+
+
+
                       {/* Email Field */}
                       <div className="mb-4">
                         <label
@@ -210,7 +291,8 @@ export default function SignInPage() {
                       )}
 
                       {/* Remember Me Checkbox */}
-                      <div className="mb-4 flex items-center">
+                      {!isSignUp && (
+                        <div className="mb-4 flex items-center">
                         <Field
                           type="checkbox"
                           id="rememberMe"
@@ -224,6 +306,7 @@ export default function SignInPage() {
                           Remember Me
                         </label>
                       </div>
+                      )}
 
                       {/* Submit Button */}
                       <div className="flex flex-col justify-center items-center py-10">

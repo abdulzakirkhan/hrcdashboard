@@ -407,6 +407,7 @@ useEffect(() => {
     }
   }
 
+  console.log("messages :",messages[0])
 
 const entries = Object.entries(groupedMessages ?? {});
 
@@ -429,7 +430,127 @@ const hasChats = entries.some(([, msgs]) => (msgs?.length ?? 0) > 0);
             onScroll={(e) => onScrollEnd(e)}
             id="chatt"
           >
-            
+            {Object.entries(groupedMessages)?.map(([date, msgs]) => {
+              const parsedDate = parseISO(date); // "2025-07-08" -> Date object
+              const displayDate = isToday(parsedDate)
+                ? "Today"
+                : isYesterday(parsedDate)
+                ? "Yesterday"
+                : format(parsedDate, "dd MMM yyyy");
+
+
+              return (
+                <div key={date + Math.random()}>
+                  {/* 🗓️ Date separator */}
+                  <div className="text-center my-4">
+                    <span className="bg-gray-300 text-gray-800 px-4 py-1 rounded-full text-sm font-medium">
+                      {displayDate}
+                    </span>
+                  </div>
+
+                  {/* 💬 Messages */}
+                  {msgs?.map((msg, index) => {
+                    const fileUrl = `${BASE_URL}/newchatfilesuploads/${msg?.msgfile}`;
+                    const isAudio = isAudioFile(msg?.msgfile);
+                    const isImage = isPngFile(msg?.msgfile);
+
+                    const isPdf = msg?.msgfile !=="" ? isPdfFile(msg?.msgfile) : false;
+                    const isDox = msg?.msgfile !=="" ? isDocxFile(msg?.msgfile) : false;
+                    const msgtime = getFormatedTime(msg?.time)
+                    return (
+                      <div key={index} className="mb-4 p-4">
+                        <div
+                          className={`flex ${
+                            msg?.messagefrom == user?.userid
+                              ? "justify-end"
+                              : "justify-start"
+                          }`}
+                        >
+                          <div
+                            className={`p-3 ${
+                              !isAudio ? "max-w-[60%]" : isDox  ? "w-[80%]" : "w-[40%]"
+                            } rounded-lg ${
+                              msg?.messagefrom == user?.userid
+                                ? "bg-blue-100"
+                                : "bg-gray-100"
+                            }`}
+                          >
+                            {isImage ? (
+                              <img
+                                src={fileUrl}
+                                alt="chat-img"
+                                className="max-w-xs rounded-md"
+                              />
+                            ) : isAudio ? (
+                              <audio
+                                controls
+                                preload="metadata"
+                                className="w-full"
+                              >
+                                <source src={fileUrl} type={"audio/mpeg"} />
+                                Your browser does not support the audio element.
+                              </audio>
+                            ) : isPdf ? (
+                              <div className={`${isPdf ? "h-[400px] overflow-y-auto" : ""}`}>
+                                <div className="flex justify-between px-4 items-center mb-2">
+                                  <span className="font-medium text-gray-600">PDF Preview</span>
+                                  <a
+                                  target="_blank"
+                                    href={fileUrl}
+                                    download
+                                    className="text-blue-500 hover:underline text-sm"
+                                  >
+                                    Download PDF
+                                  </a>
+                                </div>
+
+                                <Document file={fileUrl}>
+                                  <Page
+                                    pageNumber={1}
+                                    width={400}
+                                    height={400}
+                                    renderTextLayer={false}
+                                    renderAnnotationLayer={false}
+                                  />
+                                </Document>
+                              </div>
+                            ) : isDox ? <div className="w-full">
+                              <div className="flex justify-between px-4 items-center mb-2">
+                                  <span className="font-medium text-gray-600">Docx Preview</span>
+                                  <a
+                                  target="_blank"
+                                    href={fileUrl}
+                                    download
+                                    className="text-blue-500 hover:underline text-sm"
+                                  >
+                                    Download Docx
+                                  </a>
+                                </div>
+                              <iframe
+                                src={`https://docs.google.com/gview?url=${fileUrl}&embedded=true`}
+                                className="w-full h-48 rounded-md"
+                                title="DOCX Preview"
+                              />
+                            </div> : (
+                              <p>{msg?.message === "" ? "empty Message" : msg?.message}</p>
+                            )}
+                          </div>
+                        </div>
+                        <p
+                          className={`text-xs mt-1 ${
+                            msg?.messagefrom == user?.userid
+                              ? "text-blue-500 text-end"
+                              : "text-gray-500 text-start"
+                          }`}
+                        >
+                          {msgtime}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
 
             {!hasChats ? (
               <div className="py-8 text-center text-gray-500">No chat found</div>

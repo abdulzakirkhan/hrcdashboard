@@ -14,7 +14,24 @@
     --foreground: #ededed;
   }
 }
+.PhoneInput {
+  @apply flex items-center gap-2 border border-gray-300 rounded-md px-3 py-2;
+}
 
+/* country select button */
+.PhoneInputCountry {
+  @apply flex items-center gap-1;
+}
+
+/* flag image */
+.PhoneInputCountryIcon {
+  @apply w-6 h-4;
+}
+
+/* the actual input */
+.PhoneInputInput {
+  @apply flex-1 border-none focus:outline-none;
+}
 body {
   color: var(--foreground);
   background: var(--background);

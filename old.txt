@@ -151,28 +151,28 @@ const DashboardPage = () => {
       <div className="container mx-auto py-8">
         {getAllBanners?.result?.banners?.length > 0 && (
           <div className="w-full overflow-x-auto py-4 flex gap-4 px-4 justify-center items-center flex-wrap">
-            {getAllBanners?.result?.banners?.map((banner) => (
+            {getAllBanners.result.banners.map((banner) => (
               <div
-                key={banner?.id}
+                key={banner.id}
                 onClick={() => handleBannerClick(banner.id)}
                 className="min-w-[300px] cursor-pointer hover:scale-105 transition-transform duration-300"
               >
                 <Image
-                  src={banner?.imagelink}
-                  alt={banner?.desc || "Banner"}
+                  src={banner.imagelink}
+                  alt={banner.desc || "Banner"}
                   width={600}
                   height={250}
                   className="rounded-lg shadow-md object-cover"
                 />
                 <p className="text-center mt-2 text-sm text-gray-600">
-                  {banner?.desc}
+                  {banner.desc}
                 </p>
               </div>
             ))}
           </div>
         )}
 
-        {isVerified ? (
+        {isVerified && (
           <>
             <motion.div
               className="lg:w-full flex flex-wrap justify-center sm:justify-between items-center"
@@ -277,7 +277,7 @@ const DashboardPage = () => {
               <Cards cardsData={cardsData} />
             </div>
           </>
-         ) : (
+        ) : (
           <motion.div
             className="w-full flex flex-col items-center justify-center text-center bg-white shadow-md rounded-lg p-6 md:p-10 border border-red-300"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -302,10 +302,15 @@ const DashboardPage = () => {
               Verify Phone Number
             </button>
           </motion.div>
-         )}
+        )}
       </div>
     </section>
   );
 };
 
 export default DashboardPage;
+
+
+
+
+//

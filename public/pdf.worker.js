@@ -248,7 +248,7 @@ function createValidAbsoluteUrl(e, t = null, a = null) {
   if (!e) return null;
   if (a && "string" == typeof e) {
     if (a.addDefaultProtocol && e.startsWith("www.")) {
-      const t = e.match(/\./g);
+      const t = e?.match(/\./g);
       t?.length >= 2 && (e = `http://${e}`);
     }
     if (a.tryConvertEncoding)
@@ -1213,7 +1213,7 @@ function lookupNormalRect(e, t) {
 function parseXFAPath(e) {
   const t = /(.+)\[(\d+)\]$/;
   return e.split(".").map((e) => {
-    const a = e.match(t);
+    const a = e?.match(t);
     return a ? { name: a[1], pos: parseInt(a[2], 10) } : { name: e, pos: 0 };
   });
 }
@@ -5527,7 +5527,7 @@ class QueueOptimizer extends NullOptimizer {
       argsArray: e.argsArray,
       isOffscreenCanvasSupported: OperatorList.isOffscreenCanvasSupported,
     };
-    this.match = null;
+    this?.match = null;
     this.lastProcessed = 0;
   }
   _optimize() {
@@ -5535,7 +5535,7 @@ class QueueOptimizer extends NullOptimizer {
     let t = this.lastProcessed,
       a = e.length,
       r = this.state,
-      i = this.match;
+      i = this?.match;
     if (!r && !i && t + 1 === a && !Va[e[t]]) {
       this.lastProcessed = a;
       return;
@@ -5564,21 +5564,21 @@ class QueueOptimizer extends NullOptimizer {
       } else t++;
     }
     this.state = r;
-    this.match = i;
+    this?.match = i;
     this.lastProcessed = t;
   }
   flush() {
-    for (; this.match; ) {
+    for (; this?.match; ) {
       const e = this.queue.fnArray.length;
-      this.lastProcessed = (0, this.match.processFn)(this.context, e);
-      this.match = null;
+      this.lastProcessed = (0, this?.match.processFn)(this.context, e);
+      this?.match = null;
       this.state = null;
       this._optimize();
     }
   }
   reset() {
-    this.state = null;
-    this.match = null;
+    this?.state = null;
+    this?.match = null;
     this.lastProcessed = 0;
   }
 }
@@ -26739,7 +26739,7 @@ class fonts_Glyph {
       (function getCharUnicodeCategory(e) {
         const t = Dr.get(e);
         if (t) return t;
-        const a = e.match(Mr),
+        const a = e?.match(Mr),
           r = {
             isWhitespace: !!a?.[1],
             isZeroWidthDiacritic: !!a?.[2],

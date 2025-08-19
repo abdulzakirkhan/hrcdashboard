@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useFormik } from "formik"; // Import Formik
 import * as Yup from "yup"; // Import Yup for validation
 import { motion } from "framer-motion"; // Import framer-motion for animations
@@ -21,6 +21,7 @@ const Page = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth?.user);
   const { data: profileData } = useGetProfileQuery(user?.userid);
+  const fileRef = useRef(null);  
 
   const [userData, setUserData] = useState({
     profileImage: profileData?.path
@@ -63,8 +64,6 @@ const Page = () => {
       // Handle file if present
       if (values.file) {
         formData.append("imageof", values.file);
-        const imageUrl = URL.createObjectURL(values.file);
-        setImage(imageUrl);
       }
 
       // Handle name if changed
@@ -80,8 +79,19 @@ const Page = () => {
       const res = await updateProfile(formData);
       if (res?.data) {
         toast.success("Profile updated successfully.");
-        dispatch(ChangeUser({ ...user, clientname: values.fullName }));
         setImage(null); // Reset image preview after successful update
+          // Clear Formik and preview
+        formik.resetForm({
+          values: {
+            file: null,
+            fullName: profileData?.name || "",
+            email: profileData?.email || "",
+          },
+        });
+
+         if (fileRef.current) fileRef.current.value = "";
+
+        dispatch(ChangeUser({ ...user, clientname: values.fullName }));
       } else if (res?.error) {
         toast.error("Failed to update profile. Please try again.");
       }
@@ -95,10 +105,11 @@ const Page = () => {
         fullName: profileData.name || "",
         email: profileData.email || "",
       });
+      setValue(profileData?.number || "");
     }
   }, [profileData]);
 
-
+ 
   return (
     <>
       <section className="mt-20">
@@ -134,6 +145,7 @@ const Page = () => {
                     Profile Picture
                   </label>
                   <input
+                   ref={fileRef} 
                     type="file"
                     id="file"
                     name="file"
@@ -142,6 +154,8 @@ const Page = () => {
                     onChange={(e) => {
                       const file = e.target.files[0];
                       formik.setFieldValue("file", file); // Set the file in Formik state
+                      const imageUrl = URL.createObjectURL(file);
+                      setImage(imageUrl);
                     }}
                     onBlur={formik.handleBlur}
                   />
@@ -161,6 +175,8 @@ const Page = () => {
                     transition={{ duration: 0.5 }}
                   >
                     <Image
+
+                    
                       src={image}
                       width={200}
                       height={200}
@@ -241,15 +257,16 @@ const Page = () => {
                     Phone Number
                   </label>
                   <PhoneInput
+                    disabled
                     international
                     defaultCountry="US"
                     value={value}
-                    onChange={setValue}
+                    // onChange={setValue}
                     className="w-full custInput p-3 border border-gray-300 rounded-md"
                   />
                   {/* Optional: Add validation message if needed */}
                   {!value && (
-                    <div className="text-red-500 text-sm">
+                    <div className="text-red-500 text-sm invisible">
                       Phone number is required
                     </div>
                   )}

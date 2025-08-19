@@ -25,6 +25,7 @@ const page = () => {
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }, [showModal]);
+   
   return (
     <>
       <section className="mt-20">

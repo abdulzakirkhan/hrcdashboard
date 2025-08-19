@@ -11,7 +11,7 @@ const appVersion = '2.2';
 
 let privacyPolicyLink = '';
 let oneSignalId = '';
-let webAppUrl = '';
+let webAppUrl = 'https://www.hybridresearchcenter.com/';
 let androidAppUrl = '';
 let iosAppUrl = '';
 

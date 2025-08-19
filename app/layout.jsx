@@ -97,11 +97,29 @@ import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { Toaster } from "react-hot-toast";
 
-const stripePromise = loadStripe("pk_test_51NkKxCIDvqClqRenONst52QWoDYzp6xIDzhQPvomHMA0cyMgrXEMuRdTDUMMMOqu5wraiYxVXA73XZIerEU0eECU00HnhGvGpe"); 
 // Create persistor only once
 const persistor = persistStore(store);
+const STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST;
+const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
 
 export default function RootLayout({ children }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  useEffect(() => {
+    if(pathname == "/") {
+      router.push("/dashboard");
+    }
+  }, [])
+  
+
+
+  if (!STRIPE_PUBLISHABLE_KEY) {
+    // Show a clear warning in dev console so it's obvious what's wrong
+    console.warn(
+      "Missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST. Add it to your .env.local and restart the dev server."
+    );
+  }
+
   return (
     <html lang="en">
       <body>
@@ -127,12 +145,13 @@ function AppLayout({ children }) {
 
   // Route configuration
   const pureAuthPages = ["/sign-in", "/sign-up"];
-  const noLayoutButProtectedPages = ["/phone-number-verification"];
-  const noLayoutPages = [...pureAuthPages, ...noLayoutButProtectedPages];
+  // const noLayoutButProtectedPages = ["/phone-number-verification"];
+  const noLayoutPages = [...pureAuthPages];
+  // const noLayoutPages = [...pureAuthPages, ...noLayoutButProtectedPages];
 
   const isPureAuthPage = pureAuthPages.includes(pathname);
   const isNoLayoutPage = noLayoutPages.includes(pathname);
-  const isProtectedNoLayout = noLayoutButProtectedPages.includes(pathname);
+  // const isProtectedNoLayout = noLayoutButProtectedPages.includes(pathname);
 
   // Redirect logic
   useEffect(() => {
@@ -150,12 +169,14 @@ function AppLayout({ children }) {
   // Render no layout pages
   if (isNoLayoutPage) {
     // Protect `/phone-number-verification`
-    if (isProtectedNoLayout && !user) {
-      return null; // Optional: or show a loading indicator
-    }
+    // if (isProtectedNoLayout && !user) {
+    //   return null; // Optional: or show a loading indicator
+    // }
     return children;
   }
 
+
+  // console.log("user layout :",user)
   
 
   // Render layout

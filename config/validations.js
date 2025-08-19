@@ -131,8 +131,8 @@ const initaite_order_meeting_date = Yup.string()
 const new_password_validator = Yup.string()
   .required()
   .min(8)
-  .matches(/[0-9]/, '* New Password must contain at least one digit')
-  .matches(
+  ?.matches(/[0-9]/, '* New Password must contain at least one digit')
+  ?.matches(
     /[!@#$%^&*(),.?":{}|<>]/,
     '* New Password must contain at least one special character'
   )

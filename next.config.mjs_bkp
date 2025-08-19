@@ -11,6 +11,7 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'staging.portalteam.org',
       },
+      { protocol: 'https', hostname: 'portalteam.orgnabeel.a2hosted.com' },
     ],
   },
   eslint: {

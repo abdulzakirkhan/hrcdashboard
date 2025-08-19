@@ -1,5 +1,6 @@
 "use client";
 
+import { webAppUrl } from "@/config";
 import { APP_NAMES } from "@/config/constants";
 import { getCurrency, getCurrencyNameFromPhone } from "@/config/helpers";
 import { BASE_URL } from "@/constants/apiUrls";
@@ -94,7 +95,6 @@ const Header = ({ profileName, profileImage }) => {
   const LogOutUserFunction = () => {
     console.log("User logged out");
     dispatch(logOut()); // Clear redux state
-    dispatch(api.util.resetApiState());
     router.push("/sign-in"); // Redirect to login
   };
 
@@ -140,7 +140,7 @@ const Header = ({ profileName, profileImage }) => {
   useEffect(() => {
     if (profileData) {
       const updatedUser = {
-        profileImage: BASE_URL + profileData?.path,
+        profileImage: profileData?.filepath ? BASE_URL + profileData?.filepath : "/header/profile.svg",
         name: profileData?.name,
       };
       setUserData(updatedUser);
@@ -183,7 +183,7 @@ const Header = ({ profileName, profileImage }) => {
           data,
           feature: "referral",
           channel: "web",
-          $fallback_url: "https://www.hybridresearchcenter.com/",
+          $fallback_url: webAppUrl,
         };
 
         branchLib.link(linkData, (err, url) => {
@@ -336,7 +336,7 @@ const formatTime = (date) => {
   const handleSeenSingleNotification = async (id,orderId) => {
     try {
       const notification = notifications.find((item) => item.id === id);
-      console.log("notification",notification)
+      // console.log("notification",notification)
       if(notification?.status == "Viewed"){
         router.push(`/orders/${orderId}`);
         setIsShowNotifications(false)
@@ -352,11 +352,14 @@ const formatTime = (date) => {
         }
       }
       // const som = href={`/orders/${notification?.orderid}`}
-      console.log("notification",notification)
+      // console.log("notification",notification)
     } catch (error) {
       console.log("error",error)
     }
   }
+
+
+
 
 
   return (

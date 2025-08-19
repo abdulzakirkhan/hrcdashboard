@@ -27,14 +27,14 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   const Base_URL = process.env.NEXT_BASE_URL;
   const [userData, setUserData] = useState({
     profileImage: profileData?.path
-      ? Base_URL + profileData?.path
+      ? BASE_URL + profileData?.path
       : "/header/profile.svg",
     name: profileData?.name || "Hello, User",
   });
 
   const alwaysVisibleItems = [
     { title: "Dashboard", path: "/dashboard", icon: "/dashboard.png" },
-    { title: "Chat", path: "/app-chatt", icon: "/icons/sidebar/chatt.svg" },
+    
     {
       title: "Terms & Conditions",
       path: "/terms-conditions",
@@ -50,6 +50,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   ];
 
   const verifiedOnlyItems = [
+    { title: "Chat", path: "/app-chatt", icon: "/icons/sidebar/chatt.svg" },
     { title: "Orders", path: "/orders", icon: "/icons/sidebar/orders.svg" },
     {
       title: "Payment History",
@@ -87,15 +88,15 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
   useEffect(() => {
     if (profileData) {
       const updatedUser = {
-        profileImage: BASE_URL + profileData?.path,
+        profileImage: profileData?.filepath ? BASE_URL + profileData?.filepath : "/header/profile.svg",
         name: profileData?.name,
       };
       setUserData(updatedUser);
     }
   }, [profileData]);
 
+  
 
-  // console.log("profileData", userData?.profileImage);
   return (
     <div
       className={`bg-gray-900 sm-screen-side-nav overflow-auto h-screen text-white fixed left-0 z-50 flex flex-col transition-all duration-1000 md:duration-1000 ${
