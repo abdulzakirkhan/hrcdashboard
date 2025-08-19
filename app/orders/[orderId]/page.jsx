@@ -256,6 +256,7 @@ const OrderDetail = ({ params }) => {
       if (respData) {
         if (respData?.result === "Successfully Paid") {
           toast.success("Successfully Paid");
+          router.push("/orders")
         } else if (respData?.result === PAYMENT_ERROR) {
           toast.error(respData?.result || PAYMENT_ERROR);
         } else {
